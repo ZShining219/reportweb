@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 500" role="img" aria-label="呈现画布结构">
+  <rect width="780" height="500" rx="30" fill="#1e2a34"/>
+  <rect x="74" y="62" width="632" height="356" rx="18" fill="#f8f1df"/>
+  <rect x="116" y="104" width="250" height="110" rx="16" fill="#fffdf8" stroke="#c65f3d" stroke-width="4"/>
+  <rect x="410" y="104" width="238" height="210" rx="16" fill="#e6efe8" stroke="#1f6f78" stroke-width="4"/>
+  <rect x="116" y="252" width="250" height="84" rx="16" fill="#fffdf8" stroke="#20313f" stroke-width="4"/>
+  <circle cx="662" cy="400" r="22" fill="#e2ad3b"/>
+  <text x="241" y="170" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="25" fill="#26313a">TextBlock</text>
+  <text x="529" y="220" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="25" fill="#26313a">SvgBlock</text>
+  <path d="M641 384l21 16-25 11" fill="none" stroke="#26313a" stroke-width="4" stroke-linecap="round"/>
+</svg>

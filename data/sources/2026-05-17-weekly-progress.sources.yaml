@@ -1,0 +1,11 @@
+report_id: 2026-05-17-weekly-progress
+sources:
+  - id: dialog-001
+    type: codex_dialog
+    title: 项目 demo 设计讨论
+    note: 来自用户与 Codex 关于数据层、呈现层和保存体系的设计讨论。
+  - id: design-doc-001
+    type: design_doc
+    title: 数据与呈现模型设计
+    path: docs/design/data-and-presentation-model.md
+    note: 当前 demo 的结构、保存和呈现规则依据。

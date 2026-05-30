@@ -1,0 +1,311 @@
+report:
+  id: 2026-05-17-weekly-progress
+  title: ReportWebShow Demo 汇报
+  type: progress_report
+  created_at: 2026-05-17T15:30:00+08:00
+  updated_at: 2026-05-17T15:30:00+08:00
+  audience: 导师
+  presenter: 研究生
+
+sources:
+  - source_id: dialog-001
+    note: 用户确认 demo 需要呈现清晰、功能明确、数据结构干净。
+  - source_id: design-doc-001
+    note: 设计文档确立 reports、patches、revision、树形导航和本地保存规则。
+
+story_tree:
+  root: root
+  nodes:
+    - id: root
+      title: 汇报入口
+      parent: null
+      children:
+        - progress
+        - next-plan
+      status:
+        content: reviewed
+        source: sourced
+        display: visible
+      sources:
+        - source_id: design-doc-001
+          note: 项目定位来自设计文档。
+      summary: 用一个本地 Web 汇报板展示数据树、呈现页和可保存编辑。
+      speaker_note: 从项目目标切入，说明 demo 不是 PPT，而是可编辑的数据驱动展示。
+
+    - id: progress
+      title: 当前进展
+      parent: root
+      children:
+        - data-model
+        - presentation-model
+      status:
+        content: reviewed
+        source: sourced
+        display: visible
+      sources:
+        - source_id: design-doc-001
+          note: 当前进展来自已沉淀的设计文档。
+      summary: 已确立 reports + patches 的数据层，以及节点到画布的呈现关系。
+      speaker_note: 先讲已经固定下来的结构，再进入数据和呈现两个分支。
+
+    - id: data-model
+      title: 数据层结构
+      parent: progress
+      children: []
+      status:
+        content: reviewed
+        source: sourced
+        display: visible
+      sources:
+        - source_id: design-doc-001
+          note: 本节点总结本地保存体系规范。
+      summary: report_id 区分汇报项目，revision_id 区分保存版本，patches 记录用户修改。
+      speaker_note: 强调基础数据不被前端普通编辑覆盖。
+
+    - id: presentation-model
+      title: 呈现侧结构
+      parent: progress
+      children: []
+      status:
+        content: draft
+        source: sourced
+        display: visible
+      sources:
+        - source_id: design-doc-001
+          note: 本节点总结呈现侧模块。
+      summary: 一个树节点对应一个呈现页，页面由 text block 和 svg block 组成。
+      speaker_note: 说明 SVG 组件作为图示容器，文字组件支持快速修改。
+
+    - id: next-plan
+      title: 下一步计划
+      parent: root
+      children: []
+      status:
+        content: draft
+        source: inferred
+        display: visible
+      sources:
+        - source_id: dialog-001
+          note: 基于 demo 开发要求推断下一阶段。
+      summary: 将 demo 扩展为完整的树形编辑、SVG 细节编辑和数据校验流程。
+      speaker_note: 最后收束到下一阶段可以继续推进的能力。
+
+navigation:
+  mode: tree
+  linear_route:
+    - root
+    - progress
+    - data-model
+    - presentation-model
+    - next-plan
+  overrides:
+    - node_id: presentation-model
+      right: next-plan
+
+pages:
+  - id: page-root
+    node_id: root
+    canvas:
+      width: 1920
+      height: 1080
+      background: ivory-grid
+    components:
+      - id: text-root-title
+        type: text
+        x: 120
+        y: 120
+        width: 860
+        height: 240
+        content: ReportWebShow Demo
+        role: heading
+        source_status: sourced
+        style:
+          size: 72
+          weight: 700
+      - id: text-root-summary
+        type: text
+        x: 130
+        y: 360
+        width: 680
+        height: 260
+        content: 本地 Web 汇报板：用 Codex 生成基础数据树，用前端保存展示微调。
+        role: body
+        source_status: sourced
+        style:
+          size: 34
+      - id: svg-root-map
+        type: svg
+        x: 1020
+        y: 170
+        width: 720
+        height: 560
+        svg_asset_id: workflow-map
+
+  - id: page-progress
+    node_id: progress
+    canvas:
+      width: 1920
+      height: 1080
+      background: paper
+    components:
+      - id: text-progress-title
+        type: text
+        x: 110
+        y: 100
+        width: 720
+        height: 120
+        content: 当前进展
+        role: heading
+        source_status: sourced
+        style:
+          size: 58
+          weight: 700
+      - id: text-progress-list
+        type: text
+        x: 130
+        y: 260
+        width: 700
+        height: 360
+        content: "1. 已明确 reports 与 patches 的边界\n2. 已确定一个节点对应一个呈现页\n3. 已补充保存、回撤和冲突规则"
+        role: body
+        source_status: sourced
+        style:
+          size: 30
+      - id: svg-progress-tree
+        type: svg
+        x: 940
+        y: 210
+        width: 770
+        height: 520
+        svg_asset_id: story-tree
+
+  - id: page-data-model
+    node_id: data-model
+    canvas:
+      width: 1920
+      height: 1080
+      background: ledger
+    components:
+      - id: text-data-title
+        type: text
+        x: 120
+        y: 90
+        width: 780
+        height: 120
+        content: 数据层：清晰分工
+        role: heading
+        source_status: sourced
+        style:
+          size: 56
+          weight: 700
+      - id: text-data-body
+        type: text
+        x: 130
+        y: 250
+        width: 720
+        height: 400
+        content: "reports 保存基础数据树。\npatches 保存用户点击保存后的 revision。\nassets 按 report_id 保存 SVG 资源。\n最终展示由 reports + 当前 revision 链合成。"
+        role: body
+        source_status: sourced
+        style:
+          size: 29
+      - id: svg-data-flow
+        type: svg
+        x: 930
+        y: 170
+        width: 800
+        height: 560
+        svg_asset_id: data-flow
+
+  - id: page-presentation-model
+    node_id: presentation-model
+    canvas:
+      width: 1920
+      height: 1080
+      background: slate
+    components:
+      - id: text-presentation-title
+        type: text
+        x: 120
+        y: 110
+        width: 820
+        height: 120
+        content: 呈现侧：固定画布 + 可编辑组件
+        role: heading
+        source_status: sourced
+        style:
+          size: 50
+          weight: 700
+      - id: text-presentation-body
+        type: text
+        x: 130
+        y: 275
+        width: 720
+        height: 360
+        content: "播放模式负责清晰展示。\n编辑模式支持拖动、缩放和文字修改。\n保存后写入 patches，不覆盖基础 report。"
+        role: body
+        source_status: sourced
+        style:
+          size: 31
+      - id: svg-presentation-stage
+        type: svg
+        x: 930
+        y: 210
+        width: 780
+        height: 500
+        svg_asset_id: stage-layout
+
+  - id: page-next-plan
+    node_id: next-plan
+    canvas:
+      width: 1920
+      height: 1080
+      background: paper
+    components:
+      - id: text-next-title
+        type: text
+        x: 120
+        y: 120
+        width: 720
+        height: 120
+        content: 下一步计划
+        role: heading
+        source_status: inferred
+        style:
+          size: 58
+          weight: 700
+      - id: text-next-body
+        type: text
+        x: 130
+        y: 280
+        width: 740
+        height: 380
+        content: "1. 固化 demo 的数据 schema\n2. 加强 SVG 内部编辑\n3. 增加汇报内容生成 workflow\n4. 将 README 设计成项目入口"
+        role: body
+        source_status: inferred
+        style:
+          size: 30
+      - id: svg-next-loop
+        type: svg
+        x: 980
+        y: 230
+        width: 700
+        height: 470
+        svg_asset_id: revision-loop
+
+svg_assets:
+  - id: workflow-map
+    title: 工作流总览
+    path: /assets/svg/2026-05-17-weekly-progress/workflow-map.svg
+  - id: story-tree
+    title: 树形叙事
+    path: /assets/svg/2026-05-17-weekly-progress/story-tree.svg
+  - id: data-flow
+    title: 数据流
+    path: /assets/svg/2026-05-17-weekly-progress/data-flow.svg
+  - id: stage-layout
+    title: 画布结构
+    path: /assets/svg/2026-05-17-weekly-progress/stage-layout.svg
+  - id: revision-loop
+    title: 保存回撤
+    path: /assets/svg/2026-05-17-weekly-progress/revision-loop.svg

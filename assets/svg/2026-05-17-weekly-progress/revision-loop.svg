@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 470" role="img" aria-label="保存与回撤">
+  <rect width="700" height="470" rx="28" fill="#f9f5ea"/>
+  <circle cx="170" cy="235" r="78" fill="#20313f"/>
+  <circle cx="350" cy="235" r="78" fill="#1f6f78"/>
+  <circle cx="530" cy="235" r="78" fill="#c65f3d"/>
+  <text x="170" y="230" text-anchor="middle" font-family="Georgia, serif" font-size="30" fill="#fff">rev</text>
+  <text x="170" y="262" text-anchor="middle" font-family="sans-serif" font-size="19" fill="#f8f1df">001</text>
+  <text x="350" y="230" text-anchor="middle" font-family="Georgia, serif" font-size="30" fill="#fff">rev</text>
+  <text x="350" y="262" text-anchor="middle" font-family="sans-serif" font-size="19" fill="#f8f1df">002</text>
+  <text x="530" y="230" text-anchor="middle" font-family="Georgia, serif" font-size="30" fill="#fff">rev</text>
+  <text x="530" y="262" text-anchor="middle" font-family="sans-serif" font-size="19" fill="#f8f1df">003</text>
+  <path d="M246 235h28M426 235h28" stroke="#26313a" stroke-width="7" stroke-linecap="round"/>
+  <path d="M526 333C412 410 278 395 194 323" fill="none" stroke="#e2ad3b" stroke-width="8" stroke-linecap="round"/>
+  <text x="350" y="92" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="28" fill="#26313a">点击保存生成 revision</text>
+</svg>

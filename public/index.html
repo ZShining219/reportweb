@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReportWebShow Demo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <aside class="tree-panel" aria-label="叙事树">
+        <div class="brand">
+          <span class="brand-mark">RWS</span>
+          <div>
+            <p class="eyebrow">ReportWebShow</p>
+            <h1>Demo 汇报板</h1>
+          </div>
+        </div>
+        <nav id="tree" class="tree-list"></nav>
+      </aside>
+
+      <main class="workbench">
+        <header class="toolbar">
+          <div>
+            <p id="modeLabel" class="eyebrow">播放模式</p>
+            <h2 id="nodeTitle">加载中</h2>
+          </div>
+          <div class="toolbar-actions">
+            <button id="editButton" type="button">编辑</button>
+            <button id="discardButton" type="button" hidden>放弃</button>
+            <button id="saveButton" type="button" class="primary" hidden>保存</button>
+          </div>
+        </header>
+
+        <section class="stage-shell" aria-label="呈现板">
+          <div id="stage" class="stage"></div>
+        </section>
+
+        <section class="node-map-shell" aria-label="树状节点导航">
+          <div id="nodeMap" class="node-map" aria-label="树状节点图"></div>
+        </section>
+
+        <footer class="status-line">
+          <span id="statusText">准备载入数据</span>
+        </footer>
+      </main>
+
+      <aside class="inspector" aria-label="数据状态">
+        <section>
+          <p class="eyebrow">当前汇报</p>
+          <h3 id="reportTitle">Report</h3>
+          <dl class="meta-grid">
+            <div>
+              <dt>report_id</dt>
+              <dd id="reportIdText">-</dd>
+            </div>
+            <div>
+              <dt>revision</dt>
+              <dd id="revisionText">-</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section>
+          <p class="eyebrow">组件</p>
+          <div id="selectionInfo" class="selection-box">未选择</div>
+        </section>
+
+        <section>
+          <p class="eyebrow">保存记录</p>
+          <div id="revisionList" class="revision-list"></div>
+        </section>
+      </aside>
+    </div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

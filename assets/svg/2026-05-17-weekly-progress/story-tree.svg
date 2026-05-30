@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 520" role="img" aria-label="树形叙事结构">
+  <rect width="770" height="520" rx="28" fill="#eff4ef"/>
+  <g fill="none" stroke="#31434f" stroke-width="5">
+    <path d="M132 260H310"/>
+    <path d="M310 260H472"/>
+    <path d="M310 260V150H472"/>
+    <path d="M310 260V370H472"/>
+    <path d="M472 370H622"/>
+  </g>
+  <g font-family="PingFang SC, sans-serif" font-size="22" text-anchor="middle">
+    <rect x="52" y="218" width="160" height="84" rx="18" fill="#20313f"/>
+    <text x="132" y="268" fill="#fff">汇报入口</text>
+    <rect x="250" y="218" width="160" height="84" rx="18" fill="#f8f1df" stroke="#20313f" stroke-width="4"/>
+    <text x="330" y="268" fill="#20313f">当前进展</text>
+    <rect x="452" y="108" width="160" height="84" rx="18" fill="#fffdf8" stroke="#c65f3d" stroke-width="4"/>
+    <text x="532" y="158" fill="#20313f">数据层</text>
+    <rect x="452" y="328" width="160" height="84" rx="18" fill="#fffdf8" stroke="#1f6f78" stroke-width="4"/>
+    <text x="532" y="378" fill="#20313f">呈现侧</text>
+    <rect x="572" y="428" width="150" height="62" rx="16" fill="#e2ad3b"/>
+    <text x="647" y="466" fill="#20313f">下一步</text>
+  </g>
+</svg>
