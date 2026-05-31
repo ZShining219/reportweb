@@ -57,6 +57,26 @@ export function renderNodeNavigator(container, { state, currentNodeId, onSelect 
     hitLayer.append(hit);
   }
 
+  for (const marker of model.omitted) {
+    const hit = document.createElement('button');
+    hit.type = 'button';
+    hit.className = 'node-navigator__omitted-hit';
+    hit.dataset.omittedId = marker.id;
+    hit.dataset.omittedFrom = marker.from;
+    hit.dataset.omittedCount = String(marker.count);
+    hit.dataset.omittedTitle = marker.tooltip;
+    hit.textContent = marker.label;
+    hit.title = marker.tooltip;
+    hit.setAttribute('aria-label', marker.tooltip);
+    hit.style.left = marker.style.left;
+    hit.style.top = marker.style.top;
+    hit.addEventListener('click', () => {
+      const target = marker.nodes[0]?.id;
+      if (target) onSelect?.(target);
+    });
+    hitLayer.append(hit);
+  }
+
   svg.append(linkLayer, nodeLayer);
   container.replaceChildren(svg, hitLayer);
 }
@@ -70,7 +90,8 @@ export function createNodeNavigatorModel(graph) {
     links: (graph.links || [])
       .map((link) => linkModel(link, nodesById))
       .filter(Boolean),
-    nodes: (graph.nodes || []).map((node) => nodeModel(node, bounds))
+    nodes: (graph.nodes || []).map((node) => nodeModel(node, bounds)),
+    omitted: (graph.omitted || []).map((marker) => omittedModel(marker, bounds))
   };
 }
 
@@ -111,8 +132,26 @@ function nodeModel(node, bounds) {
 
 function nodeRadius(proximity) {
   if (proximity === 'primary') return 4.68;
-  if (proximity === 'secondary') return 3.6;
+  if (proximity === 'axis') return 3.6;
+  if (proximity === 'context') return 2.7;
   return 1.8;
+}
+
+function omittedModel(marker, bounds) {
+  const nodes = marker.nodes || [];
+  const titles = nodes.map((node) => node.title || node.id).filter(Boolean);
+  return {
+    id: marker.id,
+    from: marker.from,
+    count: marker.count || nodes.length,
+    nodes,
+    label: `+${marker.count || nodes.length}`,
+    tooltip: `未呈现节点：${titles.join('、')}`,
+    style: {
+      left: `${round((marker.x / bounds.width) * 100)}%`,
+      top: `${round((marker.y / bounds.height) * 100)}%`
+    }
+  };
 }
 
 function showNodeHover(nodeGroup) {

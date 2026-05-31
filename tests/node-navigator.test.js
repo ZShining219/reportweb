@@ -9,13 +9,27 @@ test('node navigator model converts graph data into minimalist render primitives
     nodes: [
       { id: 'root', title: '汇报入口', x: 10, y: 50, kind: 'path', isPath: true, opacity: 0.92 },
       { id: 'progress', title: '当前进展', x: 100, y: 40, kind: 'current', proximity: 'primary', region: 'tree-depth-1', isPath: true, opacity: 1, depth: 1 },
-      { id: 'data', title: '数据层结构', x: 190, y: 30, kind: 'child', proximity: 'secondary', region: 'tree-depth-2', isPath: false, opacity: 1 },
+      { id: 'data', title: '数据层结构', x: 190, y: 30, kind: 'child', proximity: 'axis', region: 'tree-depth-2', isPath: false, opacity: 1 },
+      { id: 'schema', title: 'Schema 校验', x: 235, y: 52, kind: 'default', proximity: 'context', region: 'edge-column', isPath: false, opacity: 0.76 },
       { id: 'archive', title: '归档节点', x: 280, y: 70, kind: 'default', proximity: 'distant', region: 'tree-depth-3', isPath: false, opacity: 0.5 }
     ],
     links: [
       { from: 'root', to: 'progress' },
       { from: 'progress', to: 'data' },
       { from: 'data', to: 'archive' }
+    ],
+    omitted: [
+      {
+        id: 'omitted-next-plan',
+        from: 'data',
+        x: 230,
+        y: 62,
+        count: 2,
+        nodes: [
+          { id: 'next-plan', title: '下一步计划' },
+          { id: 'archive', title: '归档节点' }
+        ]
+      }
     ]
   });
 
@@ -25,17 +39,24 @@ test('node navigator model converts graph data into minimalist render primitives
   assert.equal(model.links[1].className, 'node-navigator__link');
   assert.equal(model.nodes.find((node) => node.id === 'progress').radius, 4.68);
   assert.equal(model.nodes.find((node) => node.id === 'data').radius, 3.6);
+  assert.equal(model.nodes.find((node) => node.id === 'schema').radius, 2.7);
   assert.equal(model.nodes.find((node) => node.id === 'archive').radius, 1.8);
   assert.equal(model.nodes.find((node) => node.id === 'progress').className, 'node-navigator__node node-navigator__node--primary');
-  assert.equal(model.nodes.find((node) => node.id === 'data').className, 'node-navigator__node node-navigator__node--secondary');
+  assert.equal(model.nodes.find((node) => node.id === 'data').className, 'node-navigator__node node-navigator__node--axis');
+  assert.equal(model.nodes.find((node) => node.id === 'schema').className, 'node-navigator__node node-navigator__node--context');
   assert.equal(model.nodes.find((node) => node.id === 'archive').className, 'node-navigator__node node-navigator__node--distant');
-  assert.equal(model.nodes.find((node) => node.id === 'data').hitClassName, 'node-navigator__hit node-navigator__hit--secondary node-navigator__hit--label-left');
+  assert.equal(model.nodes.find((node) => node.id === 'data').hitClassName, 'node-navigator__hit node-navigator__hit--axis node-navigator__hit--label-left');
   assert.equal(model.nodes.find((node) => node.id === 'archive').opacity, 0.5);
   assert.equal(model.nodes.find((node) => node.id === 'archive').style.left, '93.33%');
   assert.equal(model.nodes.find((node) => node.id === 'data').style.left, '63.33%');
   assert.equal(model.nodes.find((node) => node.id === 'archive').style.top, '38.89%');
   assert.equal(model.nodes.find((node) => node.id === 'progress').tooltip, '当前进展');
   assert.equal(model.nodes.find((node) => node.id === 'progress').data.region, 'tree-depth-1');
+  assert.equal(model.omitted.length, 1);
+  assert.equal(model.omitted[0].label, '+2');
+  assert.equal(model.omitted[0].tooltip, '未呈现节点：下一步计划、归档节点');
+  assert.equal(model.omitted[0].style.left, '76.67%');
+  assert.equal(model.omitted[0].style.top, '34.44%');
   assert.deepEqual(model.nodes.find((node) => node.id === 'progress').data, {
     id: 'progress',
     title: '当前进展',
@@ -65,24 +86,32 @@ test('node navigator binds every rendered node to hoverable hit targets and tool
           root: 'root',
           nodes: [
             { id: 'root', title: '汇报入口', parent: null, children: ['progress', 'next-plan'] },
-            { id: 'progress', title: '当前进展', parent: 'root', children: ['data-model'] },
+            { id: 'progress', title: '当前进展', parent: 'root', children: ['data-model', 'presentation-model'] },
             { id: 'data-model', title: '数据层结构', parent: 'progress', children: [] },
-            { id: 'next-plan', title: '下一步计划', parent: 'root', children: [] }
+            { id: 'presentation-model', title: '呈现侧结构', parent: 'progress', children: ['node-navigator'] },
+            { id: 'node-navigator', title: '节点导航呈现', parent: 'presentation-model', children: ['patch-solidify'] },
+            { id: 'patch-solidify', title: 'Patch 固化', parent: 'node-navigator', children: [] },
+            { id: 'next-plan', title: '下一步计划', parent: 'root', children: ['archive'] },
+            { id: 'archive', title: '归档节点', parent: 'next-plan', children: [] }
           ]
         }
       }
     });
 
     const renderedNodes = container.findAll((node) => node.classList.contains('node-navigator__node'));
-    const hitTargets = container.findAll((node) => node.tagName === 'button');
+    const nodeHitTargets = container.findAll((node) => node.classList.contains('node-navigator__hit'));
+    const omittedTargets = container.findAll((node) => node.classList.contains('node-navigator__omitted-hit'));
 
-    assert.equal(hitTargets.length, renderedNodes.length);
-    assert.equal(hitTargets.every((hit) => hit.dataset.nodeId && hit.dataset.nodeTitle), true);
-    assert.equal(hitTargets.every((hit) => hit.attributes.title === hit.dataset.nodeTitle), true);
-    assert.equal(hitTargets.every((hit) => hit.nodeData?.id === hit.dataset.nodeId), true);
+    assert.equal(nodeHitTargets.length, renderedNodes.length);
+    assert.equal(nodeHitTargets.every((hit) => hit.dataset.nodeId && hit.dataset.nodeTitle), true);
+    assert.equal(nodeHitTargets.every((hit) => hit.attributes.title === hit.dataset.nodeTitle), true);
+    assert.equal(nodeHitTargets.every((hit) => hit.nodeData?.id === hit.dataset.nodeId), true);
+    assert.equal(omittedTargets.length >= 1, true);
+    assert.equal(omittedTargets.every((hit) => hit.textContent.startsWith('+')), true);
+    assert.equal(omittedTargets.every((hit) => hit.attributes.title?.startsWith('未呈现节点：')), true);
 
     const progressNode = renderedNodes.find((node) => node.dataset.nodeId === 'progress');
-    const progressHit = hitTargets.find((node) => node.dataset.nodeId === 'progress');
+    const progressHit = nodeHitTargets.find((node) => node.dataset.nodeId === 'progress');
 
     progressHit.dispatchEvent({ type: 'mouseenter' });
     assert.equal(progressNode.classList.contains('is-hovered'), true);

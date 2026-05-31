@@ -511,6 +511,52 @@ h3 {
   opacity: 1;
 }
 
+.node-navigator__omitted-hit {
+  position: absolute;
+  z-index: 2;
+  min-width: 24px;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid color-mix(in srgb, var(--muted) 44%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--paper) 84%, transparent);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 16px;
+  transform: translate(-50%, -50%);
+}
+
+.node-navigator__omitted-hit:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.node-navigator__omitted-hit::after {
+  content: attr(data-omitted-title);
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  z-index: 3;
+  max-width: 240px;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  background: var(--ink);
+  color: #fffaf0;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.node-navigator__omitted-hit:hover::after,
+.node-navigator__omitted-hit:focus-visible::after {
+  opacity: 1;
+}
+
 .status-line {
   display: flex;
   flex-wrap: wrap;
