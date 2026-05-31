@@ -8,7 +8,26 @@
   </head>
   <body>
     <div id="app" class="app-shell">
-      <aside class="tree-panel" aria-label="叙事树">
+      <button
+        id="treeDrawerToggle"
+        class="drawer-edge-button drawer-edge-button--left"
+        type="button"
+        aria-controls="treePanel"
+        aria-expanded="false"
+      >
+        叙事树
+      </button>
+      <button
+        id="inspectorDrawerToggle"
+        class="drawer-edge-button drawer-edge-button--right"
+        type="button"
+        aria-controls="inspector"
+        aria-expanded="false"
+      >
+        状态
+      </button>
+
+      <aside id="treePanel" class="tree-panel side-drawer side-drawer--left" aria-label="叙事树" aria-hidden="true">
         <div class="brand">
           <span class="brand-mark">RWS</span>
           <div>
@@ -46,7 +65,7 @@
         </footer>
       </main>
 
-      <aside id="inspector" class="inspector" aria-label="数据状态">
+      <aside id="inspector" class="inspector side-drawer side-drawer--right" aria-label="数据状态" aria-hidden="true">
         <section>
           <p class="eyebrow">当前汇报</p>
           <h3 id="reportTitle">Report</h3>

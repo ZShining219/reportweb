@@ -50,4 +50,10 @@
   --ui-z-base: 1;
   --ui-z-feedback: 20;
   --ui-z-panel: 30;
+  --ui-z-drawer: 50;
+  --ui-z-drawer-toggle: 60;
+
+  --ui-drawer-edge-width: 44px;
+  --ui-drawer-width-left: 280px;
+  --ui-drawer-width-right: 300px;
 }

@@ -20,8 +20,13 @@ let selectedIds = new Set();
 let clipboard = null;
 let editFeedback = { active: false };
 let collapsedNodeIds = new Set();
+let openDrawers = new Set();
 
 const elements = {
+  app: document.querySelector('#app'),
+  treePanel: document.querySelector('#treePanel'),
+  treeDrawerToggle: document.querySelector('#treeDrawerToggle'),
+  inspectorDrawerToggle: document.querySelector('#inspectorDrawerToggle'),
   tree: document.querySelector('#tree'),
   stage: document.querySelector('#stage'),
   nodeTitle: document.querySelector('#nodeTitle'),
@@ -43,7 +48,10 @@ const elements = {
 elements.editButton.addEventListener('click', enterEditMode);
 elements.discardButton.addEventListener('click', discardEditMode);
 elements.saveButton.addEventListener('click', saveRevision);
+elements.treeDrawerToggle.addEventListener('click', () => toggleDrawer('left'));
+elements.inspectorDrawerToggle.addEventListener('click', () => toggleDrawer('right'));
 window.addEventListener('keydown', handleKeydown);
+syncDrawerState();
 
 await loadReport();
 
@@ -171,6 +179,35 @@ function renderInspector(state) {
   elements.inspector.replaceChildren(wrapper);
 }
 
+function toggleDrawer(side) {
+  setDrawerState(side, !openDrawers.has(side));
+}
+
+function setDrawerState(side, isOpen) {
+  if (isOpen) {
+    openDrawers.add(side);
+  } else {
+    openDrawers.delete(side);
+  }
+  syncDrawerState();
+}
+
+function closeDrawers() {
+  openDrawers = new Set();
+  syncDrawerState();
+}
+
+function syncDrawerState() {
+  const leftOpen = openDrawers.has('left');
+  const rightOpen = openDrawers.has('right');
+  elements.app.setAttribute('data-left-drawer', leftOpen ? 'open' : 'closed');
+  elements.app.setAttribute('data-right-drawer', rightOpen ? 'open' : 'closed');
+  elements.treePanel.setAttribute('aria-hidden', leftOpen ? 'false' : 'true');
+  elements.inspector.setAttribute('aria-hidden', rightOpen ? 'false' : 'true');
+  elements.treeDrawerToggle.setAttribute('aria-expanded', leftOpen ? 'true' : 'false');
+  elements.inspectorDrawerToggle.setAttribute('aria-expanded', rightOpen ? 'true' : 'false');
+}
+
 function beginDrag(event, component, canvas) {
   if (event.target.classList.contains('resize-handle')) return;
   if (event.target.contentEditable === 'true') return;
@@ -290,6 +327,12 @@ async function saveRevision() {
 }
 
 function handleKeydown(event) {
+  if (event.key === 'Escape' && openDrawers.size) {
+    closeDrawers();
+    event.preventDefault();
+    return;
+  }
+
   if (!payload) return;
 
   if ((event.metaKey || event.ctrlKey) && mode === 'edit') {
