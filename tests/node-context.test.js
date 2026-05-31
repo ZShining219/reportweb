@@ -124,7 +124,7 @@ test('node graph exposes clean render metadata for labels and hit targets', () =
   assert.equal(graph.omitted.some((marker) => marker.nodes.some((node) => node.id === 'archive')), true);
 });
 
-test('node graph treats grandparent and non-nearest siblings as distant', () => {
+test('node graph keeps only nearest siblings visible in the current column', () => {
   const graph = getNodeGraph(state, 'data-model');
   const byId = Object.fromEntries(graph.nodes.map((node) => [node.id, node]));
 
@@ -132,9 +132,9 @@ test('node graph treats grandparent and non-nearest siblings as distant', () => 
   assert.equal(byId.progress.proximity, 'axis');
   assert.equal(byId['presentation-model'].proximity, 'context');
   assert.equal(byId.root.proximity, 'axis');
-  assert.equal(byId['extra-child'].proximity, 'distant');
+  assert.equal(byId['extra-child'], undefined);
   assert.equal(byId.root.region, 'ancestor-trace');
-  assert.equal(byId['extra-child'].region, 'sibling-trace');
+  assert.equal(graph.omitted.some((marker) => marker.nodes.some((node) => node.id === 'extra-child')), true);
 });
 
 test('node graph keeps the current node centered and aligns parents with the current axis', () => {
@@ -230,6 +230,58 @@ test('node graph keeps nodes in the same column evenly spaced', () => {
   assert.deepEqual(gaps, [23, 23]);
 });
 
+test('node graph keeps high-fanout kinship windows inside the navigator bounds', () => {
+  const highFanoutState = makeHighFanoutState();
+  const targetIds = [
+    'root',
+    'branch-0',
+    'branch-4-child-5',
+    'branch-7-child-9',
+    'branch-2-child-0-leaf-0',
+    'branch-6-child-9-leaf-11'
+  ];
+
+  for (const targetId of targetIds) {
+    const graph = getNodeGraph(highFanoutState, targetId);
+    const current = graph.nodes.find((node) => node.id === targetId);
+
+    assert.equal(current.x, graph.bounds.width / 2);
+    assert.equal(current.y, graph.bounds.height / 2);
+    assert.equal(graph.omitted.length > 0, true);
+
+    for (const node of graph.nodes) {
+      assert.equal(Number.isFinite(node.x), true);
+      assert.equal(Number.isFinite(node.y), true);
+      assert.equal(node.x >= 0 && node.x <= graph.bounds.width, true, `${targetId}:${node.id} x=${node.x}`);
+      assert.equal(node.y >= 0 && node.y <= graph.bounds.height, true, `${targetId}:${node.id} y=${node.y}`);
+    }
+  }
+});
+
 function round(value) {
   return Math.round(value * 100) / 100;
+}
+
+function makeHighFanoutState() {
+  const nodes = [{ id: 'root', title: '入口', parent: null, children: [] }];
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const addNode = (id, parent, title) => {
+    const node = { id, title, parent, children: [] };
+    nodes.push(node);
+    byId.set(id, node);
+    byId.get(parent).children.push(id);
+    return node;
+  };
+
+  for (let branch = 0; branch < 8; branch += 1) {
+    const parent = addNode(`branch-${branch}`, 'root', `分支 ${branch}`);
+    for (let child = 0; child < 10; child += 1) {
+      const childNode = addNode(`branch-${branch}-child-${child}`, parent.id, `子项 ${branch}-${child}`);
+      for (let leaf = 0; leaf < 12; leaf += 1) {
+        addNode(`branch-${branch}-child-${child}-leaf-${leaf}`, childNode.id, `叶子 ${branch}-${child}-${leaf}`);
+      }
+    }
+  }
+
+  return { story_tree: { root: 'root', nodes } };
 }

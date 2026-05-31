@@ -5,6 +5,8 @@ const ANCESTOR_GAP = 50;
 const CHILD_GAP = 32;
 const TRACE_GAP = 23;
 const MIN_X = 20;
+const MAIN_COLUMN_LIMIT = 3;
+const CONTEXT_SIDE_LIMIT = 1;
 const EDGE_COLUMN_LIMIT = 5;
 
 export function getNodeGraph(state, currentNodeId) {
@@ -74,9 +76,9 @@ function focusedPositions(current, currentPath, byId) {
 function placeCurrentSiblings(positions, current, currentParent, byId) {
   if (!currentParent) return;
 
-  const siblings = visibleChildren(currentParent, byId).filter((node) => node.id !== current.id);
-  const before = siblings.filter((node) => siblingIndex(node, currentParent) < siblingIndex(current, currentParent)).reverse();
-  const after = siblings.filter((node) => siblingIndex(node, currentParent) > siblingIndex(current, currentParent));
+  const siblings = siblingWindow(visibleChildren(currentParent, byId), current.id, CONTEXT_SIDE_LIMIT);
+  const before = [...siblings.before].reverse();
+  const after = siblings.after;
 
   before.forEach((node, index) => {
     positions.set(node.id, {
@@ -98,9 +100,9 @@ function placeParentSiblings(positions, currentParent, grandparent, byId) {
   if (!currentParent || !grandparent) return;
 
   const parentX = positions.get(currentParent.id)?.x ?? ancestorX(1);
-  const siblings = visibleChildren(grandparent, byId).filter((node) => node.id !== currentParent.id);
-  const before = siblings.filter((node) => siblingIndex(node, grandparent) < siblingIndex(currentParent, grandparent)).reverse();
-  const after = siblings.filter((node) => siblingIndex(node, grandparent) > siblingIndex(currentParent, grandparent));
+  const siblings = siblingWindow(visibleChildren(grandparent, byId), currentParent.id, CONTEXT_SIDE_LIMIT);
+  const before = [...siblings.before].reverse();
+  const after = siblings.after;
 
   before.forEach((node, index) => {
     positions.set(node.id, {
@@ -119,7 +121,7 @@ function placeParentSiblings(positions, currentParent, grandparent, byId) {
 }
 
 function placeChildren(positions, current, byId) {
-  const children = visibleChildren(current, byId);
+  const children = centeredWindow(visibleChildren(current, byId), MAIN_COLUMN_LIMIT);
   const offsets = centeredOffsets(children.length, CHILD_GAP);
 
   children.forEach((node, index) => {
@@ -139,7 +141,7 @@ function placeSiblingBranchChildren(positions, current, currentParent, byId) {
     const siblingPosition = positions.get(sibling.id);
     if (!siblingPosition) continue;
 
-    const children = visibleChildren(sibling, byId).slice(0, 3);
+    const children = centeredWindow(visibleChildren(sibling, byId), MAIN_COLUMN_LIMIT);
     const offsets = centeredOffsets(children.length, TRACE_GAP);
     children.forEach((node, index) => {
       positions.set(node.id, {
@@ -152,7 +154,7 @@ function placeSiblingBranchChildren(positions, current, currentParent, byId) {
 }
 
 function placeGrandchildren(positions, current, byId) {
-  const children = visibleChildren(current, byId);
+  const children = centeredWindow(visibleChildren(current, byId), MAIN_COLUMN_LIMIT);
 
   for (const child of children) {
     const childPosition = positions.get(child.id);
@@ -365,8 +367,22 @@ function centeredOffsets(count, gap) {
   return Array.from({ length: count }, (_item, index) => round((index - centerIndex) * gap));
 }
 
-function siblingIndex(node, parent) {
-  return (parent.children || []).indexOf(node.id);
+function centeredWindow(items, limit) {
+  if (items.length <= limit) return items;
+
+  const centerIndex = Math.floor(items.length / 2);
+  const start = clamp(centerIndex - Math.floor(limit / 2), 0, items.length - limit);
+  return items.slice(start, start + limit);
+}
+
+function siblingWindow(siblings, currentId, sideLimit) {
+  const currentIndex = siblings.findIndex((node) => node.id === currentId);
+  if (currentIndex < 0) return { before: [], after: [] };
+
+  return {
+    before: siblings.slice(Math.max(0, currentIndex - sideLimit), currentIndex),
+    after: siblings.slice(currentIndex + 1, currentIndex + sideLimit + 1)
+  };
 }
 
 function nodeDepth(node, byId) {
