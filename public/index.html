@@ -36,8 +36,8 @@
           <div id="stage" class="stage"></div>
         </section>
 
-        <section class="node-map-shell" aria-label="树状节点导航">
-          <div id="nodeMap" class="node-map" aria-label="树状节点图"></div>
+        <section class="node-navigator-shell" aria-label="树状节点导航">
+          <div id="nodeMap" class="node-navigator" aria-label="树状节点图"></div>
         </section>
 
         <footer class="status-line">
@@ -73,6 +73,13 @@
       </aside>
     </div>
 
+    <script type="importmap">
+      {
+        "imports": {
+          "d3-hierarchy": "/vendor/d3-hierarchy/src/index.js"
+        }
+      }
+    </script>
     <script type="module" src="/app.js"></script>
   </body>
 </html>

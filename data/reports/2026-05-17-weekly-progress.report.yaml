@@ -21,6 +21,7 @@ story_tree:
       parent: null
       children:
         - progress
+        - workflow-validation
         - next-plan
       status:
         content: reviewed
@@ -38,6 +39,7 @@ story_tree:
       children:
         - data-model
         - presentation-model
+        - node-effects
       status:
         content: reviewed
         source: sourced
@@ -51,7 +53,9 @@ story_tree:
     - id: data-model
       title: 数据层结构
       parent: progress
-      children: []
+      children:
+        - revision-chain
+        - schema-validation
       status:
         content: reviewed
         source: sourced
@@ -62,10 +66,54 @@ story_tree:
       summary: report_id 区分汇报项目，revision_id 区分保存版本，patches 记录用户修改。
       speaker_note: 强调基础数据不被前端普通编辑覆盖。
 
+    - id: revision-chain
+      title: Revision 链路
+      parent: data-model
+      children:
+        - patch-solidify
+      status:
+        content: draft
+        source: sourced
+        display: visible
+      sources:
+        - source_id: design-doc-001
+          note: revision 父链来自本地保存规则。
+      summary: 每次保存都生成一个 revision，并通过 parent_revision 保留可回溯链路。
+      speaker_note: 用这个节点展示当前节点的直接子节点和更远一层孙节点。
+
+    - id: patch-solidify
+      title: Patch 固化
+      parent: revision-chain
+      children: []
+      status:
+        content: draft
+        source: inferred
+        display: visible
+      sources:
+        - source_id: dialog-001
+          note: 基于后续 workflow 推断 patch 固化需求。
+      summary: 将前端修订整理为可复用 patch，必要时回写到稳定数据文档。
+      speaker_note: 该节点用于展示超过一层父子关系后的远离态。
+
+    - id: schema-validation
+      title: Schema 校验
+      parent: data-model
+      children: []
+      status:
+        content: draft
+        source: sourced
+        display: visible
+      sources:
+        - source_id: design-doc-001
+          note: schema 校验来自数据结构说明。
+      summary: 用 schema 约束 report、page、component 和 revision patch 的基本字段。
+      speaker_note: 说明数据校验会作为汇报生成和前端保存之间的稳定边界。
+
     - id: presentation-model
       title: 呈现侧结构
       parent: progress
-      children: []
+      children:
+        - node-navigator
       status:
         content: draft
         source: sourced
@@ -75,6 +123,48 @@ story_tree:
           note: 本节点总结呈现侧模块。
       summary: 一个树节点对应一个呈现页，页面由 text block 和 svg block 组成。
       speaker_note: 说明 SVG 组件作为图示容器，文字组件支持快速修改。
+
+    - id: node-navigator
+      title: 节点导航呈现
+      parent: presentation-model
+      children: []
+      status:
+        content: draft
+        source: inferred
+        display: visible
+      sources:
+        - source_id: dialog-001
+          note: 用户要求独立的轻量树状节点呈现模块。
+      summary: 用 D3 hierarchy 生成层级关系，再由轻量 SVG + 命中层完成节点呈现、点击和悬浮提示。
+      speaker_note: 强调节点模块已经从主应用中隔离，可以单独验证交互和视觉规则。
+
+    - id: node-effects
+      title: 节点效果规则
+      parent: progress
+      children: []
+      status:
+        content: draft
+        source: inferred
+        display: visible
+      sources:
+        - source_id: dialog-001
+          note: 用户明确了主要、次要、远离三档节点效果。
+      summary: 当前节点放大并居中，直接相关节点保持正常大小，远离节点缩小并降低透明度。
+      speaker_note: 用该节点展示非最近兄弟节点的远离态。
+
+    - id: workflow-validation
+      title: 流程验证
+      parent: root
+      children: []
+      status:
+        content: draft
+        source: inferred
+        display: visible
+      sources:
+        - source_id: dialog-001
+          note: 基于 demo 闭环验证目标补充。
+      summary: 串联数据读取、节点切换、编辑保存、revision 回撤和最终展示检查。
+      speaker_note: 该节点作为 root 下的中间兄弟节点，帮助展示最近兄弟与非最近兄弟的差异。
 
     - id: next-plan
       title: 下一步计划
@@ -96,11 +186,17 @@ navigation:
     - root
     - progress
     - data-model
+    - revision-chain
+    - patch-solidify
+    - schema-validation
     - presentation-model
+    - node-navigator
+    - node-effects
+    - workflow-validation
     - next-plan
   overrides:
     - node_id: presentation-model
-      right: next-plan
+      right: node-navigator
 
 pages:
   - id: page-root
@@ -254,6 +350,192 @@ pages:
         width: 780
         height: 500
         svg_asset_id: stage-layout
+
+  - id: page-revision-chain
+    node_id: revision-chain
+    canvas:
+      width: 1920
+      height: 1080
+      background: ledger
+    components:
+      - id: text-revision-chain-title
+        type: text
+        x: 120
+        y: 110
+        width: 780
+        height: 120
+        content: Revision 链路
+        role: heading
+        source_status: sourced
+        style:
+          size: 56
+          weight: 700
+      - id: text-revision-chain-body
+        type: text
+        x: 130
+        y: 275
+        width: 820
+        height: 360
+        content: "base report 保持稳定。\n每次保存生成新的 revision。\nparent_revision 串起可回溯链路。"
+        role: body
+        source_status: sourced
+        style:
+          size: 30
+
+  - id: page-patch-solidify
+    node_id: patch-solidify
+    canvas:
+      width: 1920
+      height: 1080
+      background: paper
+    components:
+      - id: text-patch-solidify-title
+        type: text
+        x: 120
+        y: 120
+        width: 760
+        height: 120
+        content: Patch 固化
+        role: heading
+        source_status: inferred
+        style:
+          size: 56
+          weight: 700
+      - id: text-patch-solidify-body
+        type: text
+        x: 130
+        y: 280
+        width: 800
+        height: 320
+        content: "把可验证的前端修订沉淀为稳定 patch。\n未确认的临时调整仍保留在 revision 链中。"
+        role: body
+        source_status: inferred
+        style:
+          size: 30
+
+  - id: page-schema-validation
+    node_id: schema-validation
+    canvas:
+      width: 1920
+      height: 1080
+      background: ledger
+    components:
+      - id: text-schema-validation-title
+        type: text
+        x: 120
+        y: 120
+        width: 780
+        height: 120
+        content: Schema 校验
+        role: heading
+        source_status: sourced
+        style:
+          size: 56
+          weight: 700
+      - id: text-schema-validation-body
+        type: text
+        x: 130
+        y: 280
+        width: 840
+        height: 360
+        content: "校验 report、node、page 和 component 的关键字段。\n让 Codex 生成、前端呈现和 revision 保存使用同一套边界。"
+        role: body
+        source_status: sourced
+        style:
+          size: 29
+
+  - id: page-node-navigator
+    node_id: node-navigator
+    canvas:
+      width: 1920
+      height: 1080
+      background: slate
+    components:
+      - id: text-node-navigator-title
+        type: text
+        x: 120
+        y: 110
+        width: 820
+        height: 120
+        content: 节点导航呈现
+        role: heading
+        source_status: inferred
+        style:
+          size: 54
+          weight: 700
+      - id: text-node-navigator-body
+        type: text
+        x: 130
+        y: 275
+        width: 840
+        height: 380
+        content: "D3 hierarchy 只负责层级计算。\nSVG 圆点负责视觉呈现。\n透明按钮层负责点击、悬浮和标题浮窗。"
+        role: body
+        source_status: inferred
+        style:
+          size: 30
+
+  - id: page-node-effects
+    node_id: node-effects
+    canvas:
+      width: 1920
+      height: 1080
+      background: paper
+    components:
+      - id: text-node-effects-title
+        type: text
+        x: 120
+        y: 120
+        width: 800
+        height: 120
+        content: 节点效果规则
+        role: heading
+        source_status: inferred
+        style:
+          size: 56
+          weight: 700
+      - id: text-node-effects-body
+        type: text
+        x: 130
+        y: 280
+        width: 840
+        height: 380
+        content: "主要节点：130% 尺寸，100% 不透明。\n次要节点：正常尺寸，100% 不透明。\n远离节点：50% 尺寸，50% 不透明。"
+        role: body
+        source_status: inferred
+        style:
+          size: 30
+
+  - id: page-workflow-validation
+    node_id: workflow-validation
+    canvas:
+      width: 1920
+      height: 1080
+      background: ivory-grid
+    components:
+      - id: text-workflow-validation-title
+        type: text
+        x: 120
+        y: 120
+        width: 800
+        height: 120
+        content: 流程验证
+        role: heading
+        source_status: inferred
+        style:
+          size: 56
+          weight: 700
+      - id: text-workflow-validation-body
+        type: text
+        x: 130
+        y: 280
+        width: 860
+        height: 380
+        content: "检查数据读取、节点切换、组件编辑、保存 revision 和回撤切换。\n这一步用于确认 demo 闭环可以被稳定复现。"
+        role: body
+        source_status: inferred
+        style:
+          size: 30
 
   - id: page-next-plan
     node_id: next-plan

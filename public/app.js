@@ -1,4 +1,4 @@
-import { getNodeGraph } from './nodeContext.js';
+import { renderNodeNavigator } from './nodeNavigator.js';
 
 const reportId = '2026-05-17-weekly-progress';
 
@@ -150,71 +150,15 @@ function renderStage(state, page) {
 }
 
 function renderNodeMap(state) {
-  const graph = getNodeGraph(state, currentNodeId);
-  const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
-  const svg = createSvg('svg', {
-    viewBox: '0 0 100 100',
-    preserveAspectRatio: 'none',
-    'aria-hidden': 'true'
-  });
-  const linkLayer = createSvg('g', { class: 'map-links' });
-  const nodeLayer = createSvg('g', { class: 'map-nodes' });
-  const hitLayer = document.createElement('div');
-  hitLayer.className = 'map-hits';
-
-  for (const link of graph.links) {
-    const from = nodesById.get(link.from);
-    const to = nodesById.get(link.to);
-    if (!from || !to) continue;
-    const line = createSvg('line', {
-      x1: from.x,
-      y1: from.y,
-      x2: to.x,
-      y2: to.y
-    });
-    line.style.opacity = String(Math.min(from.opacity, to.opacity));
-    linkLayer.append(line);
-  }
-
-  for (const node of graph.nodes) {
-    const radius = node.kind === 'current' ? 5.8 : node.kind === 'near' ? 4.5 : 3.4;
-    const circle = createSvg('circle', {
-      class: node.kind,
-      cx: node.x,
-      cy: node.y,
-      r: radius
-    });
-    circle.style.opacity = String(node.opacity);
-    nodeLayer.append(circle);
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'map-hit';
-    button.dataset.nodeId = node.id;
-    button.setAttribute('aria-label', node.id);
-    button.style.left = `${node.x}%`;
-    button.style.top = `${node.y}%`;
-    hitLayer.append(button);
-  }
-
-  svg.append(linkLayer, nodeLayer);
-  elements.nodeMap.replaceChildren(svg, hitLayer);
-
-  hitLayer.querySelectorAll('.map-hit').forEach((button) => {
-    button.addEventListener('click', () => {
-      currentNodeId = button.dataset.nodeId;
+  renderNodeNavigator(elements.nodeMap, {
+    state,
+    currentNodeId,
+    onSelect(nodeId) {
+      currentNodeId = nodeId;
       selectedIds.clear();
       render();
-    });
+    }
   });
-}
-
-function createSvg(tagName, attributes = {}) {
-  const node = document.createElementNS('http://www.w3.org/2000/svg', tagName);
-  for (const [key, value] of Object.entries(attributes)) {
-    node.setAttribute(key, String(value));
-  }
-  return node;
 }
 
 function renderInspector(state) {

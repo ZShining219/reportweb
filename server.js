@@ -12,6 +12,7 @@ const rootDir = __dirname;
 const publicDir = path.join(rootDir, 'public');
 const dataDir = path.join(rootDir, 'data');
 const assetsDir = path.join(rootDir, 'assets');
+const d3HierarchyDir = path.join(rootDir, 'node_modules', 'd3-hierarchy');
 const port = Number(process.env.PORT || 5173);
 
 createServer(async (request, response) => {
@@ -39,6 +40,10 @@ createServer(async (request, response) => {
 
     if (request.method === 'GET' && url.pathname.startsWith('/assets/')) {
       return serveStatic(response, assetsDir, url.pathname.replace('/assets/', ''));
+    }
+
+    if (request.method === 'GET' && url.pathname.startsWith('/vendor/d3-hierarchy/')) {
+      return serveStatic(response, d3HierarchyDir, url.pathname.replace('/vendor/d3-hierarchy/', ''));
     }
 
     if (request.method === 'GET') {
