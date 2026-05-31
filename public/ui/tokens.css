@@ -1,0 +1,53 @@
+:root {
+  --ui-color-ink: #25313a;
+  --ui-color-muted: #65717b;
+  --ui-color-paper: #f7f1e3;
+  --ui-color-paper-2: #fffaf0;
+  --ui-color-line: rgba(37, 49, 58, 0.16);
+  --ui-color-accent: #c65f3d;
+  --ui-color-teal: #1f6f78;
+  --ui-color-gold: #d9a331;
+  --ui-color-rose: #8f405d;
+
+  --ui-feedback-move: #1f6f78;
+  --ui-feedback-edit: #8f405d;
+  --ui-feedback-resize: #d9a331;
+  --ui-feedback-select: #c65f3d;
+
+  --ui-font-body: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --ui-font-display: Georgia, "Times New Roman", serif;
+  --ui-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ui-text-xs: 12px;
+  --ui-text-sm: 14px;
+  --ui-text-md: 16px;
+  --ui-text-lg: 18px;
+  --ui-text-xl: 24px;
+  --ui-text-2xl: 34px;
+
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 20px;
+  --ui-space-6: 24px;
+  --ui-space-7: 28px;
+  --ui-space-8: 32px;
+
+  --ui-radius-none: 0;
+  --ui-radius-sm: 4px;
+  --ui-radius-md: 8px;
+
+  --ui-border-subtle: 1px solid var(--ui-color-line);
+
+  --ui-shadow-panel: 0 16px 42px rgba(37, 49, 58, 0.08);
+  --ui-shadow-stage: 0 26px 80px rgba(37, 49, 58, 0.16);
+
+  --ui-duration-fast: 120ms;
+  --ui-duration-normal: 180ms;
+  --ui-ease-standard: ease;
+
+  --ui-z-base: 1;
+  --ui-z-feedback: 20;
+  --ui-z-panel: 30;
+}

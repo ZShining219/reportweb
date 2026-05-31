@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit Feedback Demo</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/modules/editFeedback.css">
+  <style>
+    body {
+      margin: var(--ui-space-6);
+      background: var(--ui-color-paper);
+      color: var(--ui-color-ink);
+      font-family: var(--ui-font-body);
+    }
+
+    .demo-shell {
+      display: grid;
+      grid-template-columns: calc(var(--ui-space-8) * 5) minmax(calc(var(--ui-space-8) * 14), calc(var(--ui-space-8) * 24));
+      gap: var(--ui-space-6);
+      align-items: start;
+    }
+
+    .demo-controls {
+      display: grid;
+      gap: var(--ui-space-2);
+    }
+
+    .demo-controls button {
+      padding: var(--ui-space-2) var(--ui-space-3);
+      border: var(--ui-border-subtle);
+      border-radius: var(--ui-radius-sm);
+      background: var(--ui-color-paper-2);
+      color: var(--ui-color-ink);
+      font: inherit;
+      text-align: left;
+    }
+
+    .demo-controls button[aria-pressed="true"] {
+      border-color: var(--ui-color-accent);
+      color: var(--ui-color-accent);
+    }
+
+    .demo-stage {
+      position: relative;
+      min-height: calc(var(--ui-space-8) * 12);
+      overflow: hidden;
+      border: var(--ui-border-subtle);
+      border-radius: var(--ui-radius-md);
+      background: var(--ui-color-paper-2);
+      box-shadow: var(--ui-shadow-stage);
+    }
+
+    .demo-component {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      border: var(--ui-border-subtle);
+      border-radius: var(--ui-radius-sm);
+      color: var(--ui-color-muted);
+      font-size: var(--ui-text-sm);
+    }
+
+    .demo-component--text {
+      left: calc(var(--ui-space-8) * 4);
+      top: calc(var(--ui-space-8) * 5);
+      width: calc(var(--ui-space-8) * 8);
+      height: calc(var(--ui-space-8) * 3);
+      background: var(--ui-color-paper);
+    }
+
+    .demo-component--visual {
+      left: calc(var(--ui-space-8) * 8);
+      top: calc(var(--ui-space-8) * 7);
+      width: calc(var(--ui-space-8) * 6);
+      height: calc(var(--ui-space-8) * 4);
+      background: var(--ui-color-paper);
+    }
+  </style>
+</head>
+<body>
+  <main class="demo-shell">
+    <nav class="demo-controls" aria-label="Edit feedback states">
+      <button type="button" data-state="hover">hover</button>
+      <button type="button" data-state="text">text</button>
+      <button type="button" data-state="move">move</button>
+      <button type="button" data-state="resize">resize</button>
+      <button type="button" data-state="select">select</button>
+      <button type="button" data-state="dirty">dirty</button>
+    </nav>
+
+    <section class="demo-stage" id="stage" aria-label="Mock report stage">
+      <article class="demo-component demo-component--text">text-001</article>
+      <article class="demo-component demo-component--visual">svg-001</article>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createEditFeedbackModel, renderEditFeedback } from '/modules/editFeedback.js';
+
+    const stage = document.querySelector('#stage');
+    const buttons = [...document.querySelectorAll('[data-state]')];
+    const textComponent = { id: 'text-001', type: 'text', x: 120, y: 160, width: 420, height: 120 };
+    const visualComponent = { id: 'svg-001', type: 'svg', x: 260, y: 220, width: 300, height: 180 };
+
+    const states = {
+      hover: { mode: 'edit', intent: 'hover', component: visualComponent },
+      text: { mode: 'edit', intent: 'text', component: textComponent },
+      move: { mode: 'edit', intent: 'move', component: visualComponent, delta: { x: 32, y: -8 } },
+      resize: { mode: 'edit', intent: 'resize', component: textComponent, size: { width: 420, height: 180 } },
+      select: { mode: 'edit', intent: 'select', component: textComponent },
+      dirty: { mode: 'edit', intent: 'text', component: textComponent, dirty: true }
+    };
+
+    function showState(name) {
+      buttons.forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.state === name));
+      });
+      renderEditFeedback(stage, createEditFeedbackModel(states[name]));
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => showState(button.dataset.state));
+    });
+
+    showState('hover');
+  </script>
+</body>
+</html>

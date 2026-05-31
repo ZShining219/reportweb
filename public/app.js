@@ -1,6 +1,14 @@
 import { renderNodeNavigator } from './nodeNavigator.js';
+import { createReportApi } from './modules/reportApi.js';
+import { diffStates } from './modules/patchDiff.js';
+import { renderStage as renderStageCanvas } from './modules/stageCanvas.js';
+import { createEditFeedbackModel, renderEditFeedback } from './modules/editFeedback.js';
+import { createInspectorViewModel, renderInspectorPanel } from './modules/inspectorPanel.js';
+import { createRevisionViewModel, renderRevisionPanel } from './modules/revisionPanel.js';
+import { createTreeListModel, renderTreeList } from './modules/treeList.js';
 
 const reportId = '2026-05-17-weekly-progress';
+const reportApi = createReportApi();
 
 let payload = null;
 let currentNodeId = 'root';
@@ -10,6 +18,8 @@ let baseState = null;
 let baseRevision = null;
 let selectedIds = new Set();
 let clipboard = null;
+let editFeedback = { active: false };
+let collapsedNodeIds = new Set();
 
 const elements = {
   tree: document.querySelector('#tree'),
@@ -20,12 +30,14 @@ const elements = {
   saveButton: document.querySelector('#saveButton'),
   discardButton: document.querySelector('#discardButton'),
   statusText: document.querySelector('#statusText'),
+  editFeedbackDock: document.querySelector('#editFeedbackDock'),
   reportTitle: document.querySelector('#reportTitle'),
   reportIdText: document.querySelector('#reportIdText'),
   revisionText: document.querySelector('#revisionText'),
   revisionList: document.querySelector('#revisionList'),
   selectionInfo: document.querySelector('#selectionInfo'),
-  nodeMap: document.querySelector('#nodeMap')
+  nodeMap: document.querySelector('#nodeMap'),
+  inspector: document.querySelector('#inspector')
 };
 
 elements.editButton.addEventListener('click', enterEditMode);
@@ -36,7 +48,7 @@ window.addEventListener('keydown', handleKeydown);
 await loadReport();
 
 async function loadReport() {
-  payload = await requestJson(`/api/reports/${reportId}`);
+  payload = await reportApi.loadReport(reportId);
   currentNodeId = currentNodeId || payload.state.story_tree.root;
   if (!findNode(currentNodeId, payload.state)) {
     currentNodeId = payload.state.story_tree.root;
@@ -56,97 +68,59 @@ function render() {
   elements.editButton.hidden = mode === 'edit';
   elements.saveButton.hidden = mode !== 'edit';
   elements.discardButton.hidden = mode !== 'edit';
-  elements.reportTitle.textContent = payload.state.report.title;
-  elements.reportIdText.textContent = payload.reportId;
-  elements.revisionText.textContent = payload.patch.current_revision || 'base';
-
   renderTree(state);
-  renderStage(state, page);
+  renderStageCanvas(elements.stage, {
+    state,
+    page,
+    mode,
+    selectedIds,
+    onBeginDrag: beginDrag,
+    onBeginResize: beginResize,
+    onSelectComponent(event, id) {
+      toggleComponentSelection(event, id);
+      render();
+    },
+    onTextInput(component, value) {
+      component.content = value;
+      showEditFeedback('text', component, { dirty: true });
+    },
+    onTextIntent(component) {
+      showEditFeedback('text', component);
+    },
+    onMoveIntent(component) {
+      showEditFeedback('move', component, { delta: { x: 0, y: 0 } });
+    },
+    onResizeIntent(component) {
+      showEditFeedback('resize', component, { size: { width: Math.round(component.width), height: Math.round(component.height) } });
+    },
+    onClearSelection() {
+      selectedIds.clear();
+      clearEditFeedback();
+      render();
+    }
+  });
+  renderEditFeedback(elements.editFeedbackDock, editFeedback);
   renderNodeMap(state);
   renderInspector(state);
 }
 
 function renderTree(state) {
-  const rootId = state.story_tree.root;
-  const ordered = flattenTree(rootId, state);
-  elements.tree.replaceChildren(
-    ...ordered.map(({ node, depth }) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `tree-node${node.id === currentNodeId ? ' active' : ''}`;
-      button.innerHTML = `<span class="node-depth">${'·'.repeat(depth + 1)}</span>${node.title}`;
-      button.addEventListener('click', () => {
-        currentNodeId = node.id;
-        selectedIds.clear();
-        render();
-      });
-      return button;
-    })
-  );
-}
-
-function renderStage(state, page) {
-  const canvas = page?.canvas || { width: 1920, height: 1080, background: 'paper' };
-  const stageScale = elements.stage.clientWidth / canvas.width || 1;
-  elements.stage.dataset.background = canvas.background || 'paper';
-  elements.stage.replaceChildren();
-
-  for (const component of page?.components || []) {
-    const node = document.createElement('div');
-    node.className = `component ${component.type}-component${selectedIds.has(component.id) ? ' selected' : ''}${mode === 'edit' ? ' editable' : ''}`;
-    node.dataset.id = component.id;
-    node.style.left = `${(component.x / canvas.width) * 100}%`;
-    node.style.top = `${(component.y / canvas.height) * 100}%`;
-    node.style.width = `${(component.width / canvas.width) * 100}%`;
-    node.style.height = `${(component.height / canvas.height) * 100}%`;
-
-    if (component.type === 'text') {
-      const text = document.createElement('div');
-      text.className = 'text-block';
-      text.textContent = component.content;
-      text.style.fontSize = `${(component.style?.size || 28) * stageScale}px`;
-      text.style.fontWeight = component.style?.weight || 500;
-      text.style.padding = `${18 * stageScale}px ${20 * stageScale}px`;
-      text.contentEditable = mode === 'edit';
-      text.addEventListener('input', () => {
-        component.content = text.textContent;
-      });
-      node.append(text);
-    }
-
-    if (component.type === 'svg') {
-      const block = document.createElement('div');
-      block.className = 'svg-block';
-      const asset = state.svg_assets.find((item) => item.id === component.svg_asset_id);
-      block.innerHTML = `<img src="${asset?.path || ''}" alt="${asset?.title || component.id}">`;
-      node.append(block);
-    }
-
-    if (mode === 'edit') {
-      node.addEventListener('pointerdown', (event) => beginDrag(event, component, canvas));
-      const resize = document.createElement('div');
-      resize.className = 'resize-handle';
-      resize.addEventListener('pointerdown', (event) => beginResize(event, component, canvas));
-      node.append(resize);
-    }
-
-    node.addEventListener('click', (event) => {
-      if (mode !== 'edit') return;
-      event.stopPropagation();
-      if (!event.shiftKey) selectedIds.clear();
-      selectedIds.has(component.id) ? selectedIds.delete(component.id) : selectedIds.add(component.id);
-      render();
-    });
-
-    elements.stage.append(node);
-  }
-
-  elements.stage.onclick = () => {
-    if (mode === 'edit') {
+  renderTreeList(elements.tree, createTreeListModel(state, currentNodeId, collapsedNodeIds), {
+    onSelectNode(nodeId) {
+      currentNodeId = nodeId;
       selectedIds.clear();
+      clearEditFeedback();
+      render();
+    },
+    onToggleNode(nodeId, expanded) {
+      if (expanded) {
+        collapsedNodeIds.delete(nodeId);
+      } else {
+        collapsedNodeIds.add(nodeId);
+      }
       render();
     }
-  };
+  });
 }
 
 function renderNodeMap(state) {
@@ -162,33 +136,39 @@ function renderNodeMap(state) {
 }
 
 function renderInspector(state) {
-  if (!selectedIds.size) {
-    elements.selectionInfo.textContent = '未选择';
-  } else {
-    elements.selectionInfo.innerHTML = [...selectedIds].map((id) => `<div>${id}</div>`).join('');
-  }
-
-  const revisions = payload.patch.revisions || [];
-  const baseButton = revisionButton('base', null, payload.patch.current_revision === null);
-  elements.revisionList.replaceChildren(baseButton, ...revisions.map((revision) => revisionButton(revision.id, revision.id, revision.id === payload.patch.current_revision)));
-}
-
-function revisionButton(label, revisionId, active) {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = `revision-item${active ? ' active' : ''}`;
-  button.textContent = label;
-  button.addEventListener('click', async () => {
-    payload = await requestJson(`/api/reports/${reportId}/current-revision`, {
-      method: 'POST',
-      body: JSON.stringify({ revisionId })
-    });
-    mode = 'play';
-    selectedIds.clear();
-    render();
-    setStatus(`已切换到 ${label}`);
+  const selected = selectedComponents().filter(Boolean);
+  const inspectorModel = createInspectorViewModel({
+    reportId: payload.reportId,
+    reportTitle: payload.state.report.title,
+    currentRevision: payload.patch.current_revision || null,
+    currentNode: findNode(currentNodeId, state),
+    selectedComponents: selected,
+    dirty: isDirty()
   });
-  return button;
+  const revisions = payload.patch.revisions || [];
+  const revisionModel = createRevisionViewModel({
+    currentRevision: payload.patch.current_revision || null,
+    revisions
+  });
+  const wrapper = document.createElement('div');
+  const inspectorContainer = document.createElement('section');
+  const revisionContainer = document.createElement('section');
+  renderInspectorPanel(inspectorContainer, inspectorModel);
+  renderRevisionPanel(revisionContainer, revisionModel, {
+    onSelectRevision: async (revisionId) => {
+      payload = await reportApi.setCurrentRevision(reportId, revisionId);
+      mode = 'play';
+      draftState = null;
+      baseState = null;
+      baseRevision = null;
+      selectedIds.clear();
+      clearEditFeedback();
+      render();
+      setStatus(`已切换到 ${revisionId || 'base'}`);
+    }
+  });
+  wrapper.append(inspectorContainer, revisionContainer);
+  elements.inspector.replaceChildren(wrapper);
 }
 
 function beginDrag(event, component, canvas) {
@@ -198,12 +178,14 @@ function beginDrag(event, component, canvas) {
   selectComponent(event, component.id);
   const start = pointerToCanvas(event, canvas);
   const originals = selectedComponents().map((item) => ({ id: item.id, x: item.x, y: item.y }));
+  showEditFeedback('move', component, { delta: { x: 0, y: 0 } });
   event.currentTarget.setPointerCapture(event.pointerId);
 
   const onMove = (moveEvent) => {
     const point = pointerToCanvas(moveEvent, canvas);
     const dx = point.x - start.x;
     const dy = point.y - start.y;
+    showEditFeedback('move', component, { delta: { x: Math.round(dx), y: Math.round(dy) } });
     for (const original of originals) {
       const target = findComponent(original.id, workingState());
       target.x = Math.max(0, original.x + dx);
@@ -226,11 +208,15 @@ function beginResize(event, component, canvas) {
   selectComponent(event, component.id);
   const start = pointerToCanvas(event, canvas);
   const original = { width: component.width, height: component.height };
+  showEditFeedback('resize', component, { size: original });
 
   const onMove = (moveEvent) => {
     const point = pointerToCanvas(moveEvent, canvas);
     component.width = Math.max(120, original.width + point.x - start.x);
     component.height = Math.max(80, original.height + point.y - start.y);
+    showEditFeedback('resize', component, {
+      size: { width: Math.round(component.width), height: Math.round(component.height) }
+    });
     render();
   };
 
@@ -246,6 +232,15 @@ function beginResize(event, component, canvas) {
 function selectComponent(event, id) {
   if (!event.shiftKey && !selectedIds.has(id)) selectedIds.clear();
   selectedIds.add(id);
+  const component = findComponent(id, workingState());
+  showEditFeedback('select', component);
+}
+
+function toggleComponentSelection(event, id) {
+  if (!event.shiftKey) selectedIds.clear();
+  selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+  const component = findComponent(id, workingState());
+  showEditFeedback('select', component);
 }
 
 function enterEditMode() {
@@ -254,6 +249,7 @@ function enterEditMode() {
   baseState = structuredClone(payload.state);
   baseRevision = payload.patch.current_revision || null;
   selectedIds.clear();
+  clearEditFeedback();
   render();
   setStatus('编辑模式已开启');
 }
@@ -264,6 +260,7 @@ function discardEditMode() {
   baseState = null;
   baseRevision = null;
   selectedIds.clear();
+  clearEditFeedback();
   render();
   setStatus('已放弃未保存修改');
 }
@@ -276,13 +273,10 @@ async function saveRevision() {
     return;
   }
 
-  payload = await requestJson(`/api/reports/${reportId}/revisions`, {
-    method: 'POST',
-    body: JSON.stringify({
-      baseRevision,
-      summary: `保存 ${findNode(currentNodeId, draftState).title} 的前端修改`,
-      changes
-    })
+  payload = await reportApi.saveRevision(reportId, {
+    baseRevision,
+    summary: `保存 ${findNode(currentNodeId, draftState).title} 的前端修改`,
+    changes
   });
 
   mode = 'play';
@@ -290,6 +284,7 @@ async function saveRevision() {
   baseState = null;
   baseRevision = null;
   selectedIds.clear();
+  clearEditFeedback();
   render();
   setStatus(`已保存 ${changes.length} 项修改`);
 }
@@ -306,6 +301,7 @@ function handleKeydown(event) {
     if (event.key.toLowerCase() === 'x') {
       clipboard = { type: 'cut', nodeId: currentNodeId, ids: [...selectedIds] };
       removeSelectedFromDraft();
+      showEditFeedback('select', { id: `${selectedIds.size} selected`, type: 'components' }, { dirty: true });
       render();
       setStatus('已剪切组件');
       event.preventDefault();
@@ -318,6 +314,7 @@ function handleKeydown(event) {
 
   if (mode === 'edit' && event.key === 'Delete' && selectedIds.size) {
     removeSelectedFromDraft();
+    clearEditFeedback();
     render();
     event.preventDefault();
   }
@@ -350,6 +347,7 @@ function pasteClipboard() {
     component.y = origin.y + index * 34;
     targetPage.components.push(component);
     selectedIds.add(component.id);
+    showEditFeedback('select', component, { dirty: true });
   });
 
   if (clipboard.type === 'cut') clipboard = null;
@@ -374,8 +372,10 @@ function nudgeSelected(key) {
 
   for (const id of selectedIds) {
     const component = findComponent(id, workingState());
+    const original = { ...component };
     component.x = Math.max(0, component.x + delta[0]);
     component.y = Math.max(0, component.y + delta[1]);
+    showEditFeedback('move', original, { delta: { x: component.x - original.x, y: component.y - original.y } });
   }
   render();
 }
@@ -410,68 +410,6 @@ function nextNodeId(nodeId, key, state) {
   return node.id;
 }
 
-function diffStates(before, after) {
-  const changes = [];
-  const beforeMap = componentMap(before);
-  const afterMap = componentMap(after);
-
-  for (const [id, beforeItem] of beforeMap) {
-    const afterItem = afterMap.get(id);
-    if (!afterItem) {
-      changes.push({ op: 'delete_component', node_id: beforeItem.nodeId, component_id: id });
-      continue;
-    }
-    if (beforeItem.nodeId !== afterItem.nodeId) {
-      changes.push({
-        op: 'move_components',
-        component_ids: [id],
-        from_node_id: beforeItem.nodeId,
-        to_node_id: afterItem.nodeId,
-        target_origin: { x: afterItem.component.x, y: afterItem.component.y }
-      });
-    }
-    if (beforeItem.component.content !== afterItem.component.content) {
-      changes.push({
-        op: 'update_text',
-        node_id: afterItem.nodeId,
-        component_id: id,
-        field: 'content',
-        value: afterItem.component.content,
-        source_status: 'manual'
-      });
-    }
-    if (beforeItem.component.x !== afterItem.component.x || beforeItem.component.y !== afterItem.component.y) {
-      changes.push({ op: 'move_component', node_id: afterItem.nodeId, component_id: id, x: afterItem.component.x, y: afterItem.component.y });
-    }
-    if (beforeItem.component.width !== afterItem.component.width || beforeItem.component.height !== afterItem.component.height) {
-      changes.push({ op: 'resize_component', node_id: afterItem.nodeId, component_id: id, width: afterItem.component.width, height: afterItem.component.height });
-    }
-  }
-
-  for (const [id, afterItem] of afterMap) {
-    if (beforeMap.has(id) || !afterItem.component.created_from) continue;
-    changes.push({
-      op: 'copy_components',
-      source_component_ids: [afterItem.component.created_from.source_component_id],
-      from_node_id: afterItem.component.created_from.from_node_id,
-      to_node_id: afterItem.nodeId,
-      new_components: [{ id, type: afterItem.component.type, x: afterItem.component.x, y: afterItem.component.y }]
-    });
-  }
-
-  return changes;
-}
-
-function componentMap(state) {
-  const map = new Map();
-  for (const page of state.pages || []) {
-    for (const component of page.components || []) {
-      map.set(component.id, { nodeId: page.node_id, component });
-    }
-  }
-  return map;
-}
-
 function pointerToCanvas(event, canvas) {
   const rect = elements.stage.getBoundingClientRect();
   return {
@@ -481,7 +419,7 @@ function pointerToCanvas(event, canvas) {
 }
 
 function selectedComponents() {
-  return [...selectedIds].map((id) => findComponent(id, workingState()));
+  return [...selectedIds].map((id) => findComponent(id, workingState())).filter(Boolean);
 }
 
 function workingState() {
@@ -513,16 +451,25 @@ function flattenTree(nodeId, state, depth = 0) {
   ];
 }
 
-async function requestJson(url, options = {}) {
-  const response = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options
+function isDirty() {
+  return mode === 'edit' && baseState && draftState && diffStates(baseState, draftState).length > 0;
+}
+
+function showEditFeedback(intent, component, options = {}) {
+  editFeedback = createEditFeedbackModel({
+    mode,
+    intent,
+    component,
+    delta: options.delta,
+    size: options.size,
+    dirty: options.dirty ?? isDirty()
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || 'Request failed');
-  }
-  return data;
+  renderEditFeedback(elements.editFeedbackDock, editFeedback);
+}
+
+function clearEditFeedback() {
+  editFeedback = { active: false };
+  renderEditFeedback(elements.editFeedbackDock, editFeedback);
 }
 
 function setStatus(message) {

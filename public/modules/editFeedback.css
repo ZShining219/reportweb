@@ -1,0 +1,49 @@
+.edit-feedback {
+  position: static;
+  z-index: var(--ui-z-feedback);
+  display: inline-grid;
+  gap: var(--ui-space-1);
+  max-width: calc(var(--ui-space-8) * 8);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: var(--ui-border-subtle);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-color-paper-2);
+  color: var(--ui-color-ink);
+  font-family: var(--ui-font-body);
+  font-size: var(--ui-text-xs);
+  pointer-events: none;
+  box-shadow: var(--ui-shadow-panel);
+}
+
+.edit-feedback strong {
+  color: var(--ui-color-ink);
+  font-size: var(--ui-text-xs);
+}
+
+.edit-feedback span {
+  color: var(--ui-color-muted);
+}
+
+.edit-feedback--hover {
+  border-color: var(--ui-color-teal);
+}
+
+.edit-feedback--text {
+  border-color: var(--ui-feedback-edit);
+}
+
+.edit-feedback--move {
+  border-color: var(--ui-feedback-move);
+}
+
+.edit-feedback--resize {
+  border-color: var(--ui-feedback-resize);
+}
+
+.edit-feedback--select {
+  border-color: var(--ui-feedback-select);
+}
+
+.edit-feedback--dirty {
+  box-shadow: var(--ui-shadow-stage);
+}

@@ -1,6 +1,6 @@
 report_id: 2026-05-17-weekly-progress
 base_report: data/reports/2026-05-17-weekly-progress.report.yaml
-current_revision: rev-001
+current_revision: rev-002
 revisions:
   - id: rev-001
     parent_revision: null
@@ -32,3 +32,23 @@ revisions:
         component_id: svg-root-map
         x: 1081.3102791878168
         y: 49.24175126903559
+  - id: rev-002
+    parent_revision: rev-001
+    created_at: 2026-05-31T07:22:02.763Z
+    summary: 保存 呈现侧结构 的前端修改
+    changes:
+      - op: resize_component
+        node_id: presentation-model
+        component_id: text-presentation-body
+        width: 714.1458026509575
+        height: 372.40427098674525
+      - op: move_component
+        node_id: presentation-model
+        component_id: svg-presentation-stage
+        x: 1017.437407952872
+        y: 342.01767304860095
+      - op: resize_component
+        node_id: presentation-model
+        component_id: svg-presentation-stage
+        width: 726.9587628865982
+        height: 473.00441826215024

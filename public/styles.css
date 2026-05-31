@@ -1,14 +1,19 @@
+@import "./ui/tokens.css";
+@import "./ui/primitives.css";
+@import "./ui/layout.css";
+@import "./modules/editFeedback.css";
+
 :root {
-  --ink: #25313a;
-  --muted: #65717b;
-  --paper: #f7f1e3;
-  --paper-2: #fffaf0;
-  --line: rgba(37, 49, 58, 0.16);
-  --accent: #c65f3d;
-  --teal: #1f6f78;
-  --gold: #d9a331;
-  --rose: #8f405d;
-  --shadow: 0 26px 80px rgba(37, 49, 58, 0.16);
+  --ink: var(--ui-color-ink);
+  --muted: var(--ui-color-muted);
+  --paper: var(--ui-color-paper);
+  --paper-2: var(--ui-color-paper-2);
+  --line: var(--ui-color-line);
+  --accent: var(--ui-color-accent);
+  --teal: var(--ui-color-teal);
+  --gold: var(--ui-color-gold);
+  --rose: var(--ui-color-rose);
+  --shadow: var(--ui-shadow-stage);
 }
 
 * {
@@ -120,19 +125,54 @@ h3 {
 }
 
 .tree-list {
+  display: block;
+}
+
+.tree-branches {
   display: grid;
-  gap: 9px;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tree-branch .tree-branches {
+  margin-top: 8px;
+  padding-left: 18px;
+}
+
+.tree-branch-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 6px;
+  align-items: stretch;
+}
+
+.tree-toggle {
+  min-width: 0;
+  width: 28px;
+  height: auto;
+  min-height: 38px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.tree-toggle:disabled {
+  cursor: default;
+  opacity: 0.28;
 }
 
 .tree-node {
   width: 100%;
   height: auto;
-  min-height: 44px;
+  min-height: 38px;
   text-align: left;
   border-left: 4px solid transparent;
 }
 
-.tree-node.active {
+.tree-branch.active > .tree-branch-row .tree-node {
   border-left-color: var(--accent);
   background: #fffaf0;
   box-shadow: 0 10px 30px rgba(37, 49, 58, 0.08);
@@ -146,7 +186,8 @@ h3 {
 
 .workbench {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto auto auto;
+  align-content: start;
   min-width: 0;
   padding: 24px 28px;
 }
@@ -226,7 +267,7 @@ h3 {
 }
 
 .component.editable {
-  cursor: grab;
+  cursor: default;
 }
 
 .component.dragging {
@@ -271,15 +312,38 @@ h3 {
   pointer-events: none;
 }
 
+.move-handle,
 .resize-handle {
   position: absolute;
-  right: 0;
-  bottom: 0;
   width: 18px;
   height: 18px;
+  z-index: 3;
+}
+
+.move-handle {
+  left: 0;
+  top: 0;
+  background: var(--ui-feedback-move);
+  cursor: grab;
+}
+
+.move-handle::before,
+.resize-handle::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid var(--ui-color-paper-2);
+}
+
+.move-handle:active {
+  cursor: grabbing;
+}
+
+.resize-handle {
+  right: 0;
+  bottom: 0;
   background: var(--accent);
   cursor: nwse-resize;
-  z-index: 3;
 }
 
 .node-navigator {
@@ -366,10 +430,20 @@ h3 {
 }
 
 .status-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
   min-height: 28px;
   margin-top: 16px;
   color: var(--muted);
   font-size: 14px;
+}
+
+.edit-feedback-dock {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
 }
 
 .inspector section + section {
