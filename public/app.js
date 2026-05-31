@@ -2,6 +2,14 @@ import { renderNodeNavigator } from './nodeNavigator.js';
 import { createReportApi } from './modules/reportApi.js';
 import { diffStates } from './modules/patchDiff.js';
 import { renderStage as renderStageCanvas } from './modules/stageCanvas.js';
+import {
+  applyStageViewport,
+  beginStagePan,
+  createStageViewportState,
+  endStagePan,
+  handleStageViewportKey,
+  updateStagePan
+} from './modules/stageViewport.js';
 import { createEditFeedbackModel, renderEditFeedback } from './modules/editFeedback.js';
 import { createInspectorViewModel, renderInspectorPanel } from './modules/inspectorPanel.js';
 import { createRevisionViewModel, renderRevisionPanel } from './modules/revisionPanel.js';
@@ -21,6 +29,7 @@ let clipboard = null;
 let editFeedback = { active: false };
 let collapsedNodeIds = new Set();
 let openDrawers = new Set();
+let stageViewport = createStageViewportState();
 
 const elements = {
   app: document.querySelector('#app'),
@@ -51,6 +60,7 @@ elements.saveButton.addEventListener('click', saveRevision);
 elements.treeDrawerToggle.addEventListener('click', () => toggleDrawer('left'));
 elements.inspectorDrawerToggle.addEventListener('click', () => toggleDrawer('right'));
 window.addEventListener('keydown', handleKeydown);
+window.addEventListener('keyup', handleKeyup);
 syncDrawerState();
 
 await loadReport();
@@ -82,6 +92,16 @@ function render() {
     page,
     mode,
     selectedIds,
+    stageViewport,
+    onBeginStagePan(event) {
+      return beginStagePan(stageViewport, event);
+    },
+    onStagePanMove(event) {
+      return updateStagePan(stageViewport, event);
+    },
+    onEndStagePan() {
+      endStagePan(stageViewport);
+    },
     onBeginDrag: beginDrag,
     onBeginResize: beginResize,
     onSelectComponent(event, id) {
@@ -327,6 +347,12 @@ async function saveRevision() {
 }
 
 function handleKeydown(event) {
+  if (handleStageViewportKey(stageViewport, event)) {
+    applyStageViewport(elements.stage, stageViewport);
+    event.preventDefault();
+    return;
+  }
+
   if (event.key === 'Escape' && openDrawers.size) {
     closeDrawers();
     event.preventDefault();
@@ -368,6 +394,13 @@ function handleKeydown(event) {
     } else {
       navigate(event.key);
     }
+    event.preventDefault();
+  }
+}
+
+function handleKeyup(event) {
+  if (handleStageViewportKey(stageViewport, event)) {
+    applyStageViewport(elements.stage, stageViewport);
     event.preventDefault();
   }
 }
