@@ -12,6 +12,7 @@ import {
 } from './modules/stageViewport.js';
 import { createEditFeedbackModel, renderEditFeedback } from './modules/editFeedback.js';
 import { createInspectorViewModel, renderInspectorPanel } from './modules/inspectorPanel.js';
+import { createNarrativeIslandViewModel, renderNarrativeIsland } from './modules/narrativeIsland.js';
 import { createRevisionViewModel, renderRevisionPanel } from './modules/revisionPanel.js';
 import { createTreeListModel, renderTreeList } from './modules/treeList.js';
 
@@ -30,6 +31,13 @@ let editFeedback = { active: false };
 let collapsedNodeIds = new Set();
 let openDrawers = new Set();
 let stageViewport = createStageViewportState();
+let narrativeIslandExpanded = false;
+let narrativeIslandOpening = false;
+let narrativeIslandClosing = false;
+let narrativeIslandOpenTimer = null;
+let narrativeIslandCloseTimer = null;
+const NARRATIVE_ISLAND_OPEN_MS = 620;
+const NARRATIVE_ISLAND_CLOSE_MS = 620;
 
 const elements = {
   app: document.querySelector('#app'),
@@ -50,7 +58,7 @@ const elements = {
   revisionText: document.querySelector('#revisionText'),
   revisionList: document.querySelector('#revisionList'),
   selectionInfo: document.querySelector('#selectionInfo'),
-  nodeMap: document.querySelector('#nodeMap'),
+  narrativeIsland: document.querySelector('#narrativeIsland'),
   inspector: document.querySelector('#inspector')
 };
 
@@ -128,7 +136,7 @@ function render() {
     }
   });
   renderEditFeedback(elements.editFeedbackDock, editFeedback);
-  renderNodeMap(state);
+  renderNarrativeIslandView(state);
   renderInspector(state);
 }
 
@@ -151,16 +159,77 @@ function renderTree(state) {
   });
 }
 
-function renderNodeMap(state) {
-  renderNodeNavigator(elements.nodeMap, {
+function renderNarrativeIslandView(state) {
+  const model = createNarrativeIslandViewModel({
     state,
     currentNodeId,
-    onSelect(nodeId) {
-      currentNodeId = nodeId;
-      selectedIds.clear();
-      render();
+    expanded: narrativeIslandExpanded,
+    opening: narrativeIslandOpening,
+    closing: narrativeIslandClosing
+  });
+
+  renderNarrativeIsland(elements.narrativeIsland, model, {
+    onToggle() {
+      toggleNarrativeIsland();
+    },
+    renderMap(mapSlot) {
+      renderNodeNavigator(mapSlot, {
+        state,
+        currentNodeId,
+        onSelect(nodeId) {
+          narrativeIslandExpanded = true;
+          narrativeIslandOpening = false;
+          narrativeIslandClosing = false;
+          clearNarrativeIslandOpenTimer();
+          clearNarrativeIslandCloseTimer();
+          currentNodeId = nodeId;
+          selectedIds.clear();
+          render();
+        }
+      });
     }
   });
+}
+
+function toggleNarrativeIsland() {
+  if (narrativeIslandExpanded) {
+    narrativeIslandExpanded = false;
+    narrativeIslandOpening = false;
+    narrativeIslandClosing = true;
+    clearNarrativeIslandOpenTimer();
+    clearNarrativeIslandCloseTimer();
+    render();
+    narrativeIslandCloseTimer = setTimeout(() => {
+      narrativeIslandClosing = false;
+      narrativeIslandCloseTimer = null;
+      render();
+    }, NARRATIVE_ISLAND_CLOSE_MS);
+    return;
+  }
+
+  narrativeIslandExpanded = true;
+  narrativeIslandOpening = true;
+  narrativeIslandClosing = false;
+  clearNarrativeIslandOpenTimer();
+  clearNarrativeIslandCloseTimer();
+  render();
+  narrativeIslandOpenTimer = setTimeout(() => {
+    narrativeIslandOpening = false;
+    narrativeIslandOpenTimer = null;
+    render();
+  }, NARRATIVE_ISLAND_OPEN_MS);
+}
+
+function clearNarrativeIslandOpenTimer() {
+  if (!narrativeIslandOpenTimer) return;
+  clearTimeout(narrativeIslandOpenTimer);
+  narrativeIslandOpenTimer = null;
+}
+
+function clearNarrativeIslandCloseTimer() {
+  if (!narrativeIslandCloseTimer) return;
+  clearTimeout(narrativeIslandCloseTimer);
+  narrativeIslandCloseTimer = null;
 }
 
 function renderInspector(state) {
