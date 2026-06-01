@@ -83,8 +83,10 @@ test('project manager renderer shows projects and emits selected report id', () 
     assert.equal(root.textContent.includes('基础版本'), true);
     assert.equal(buttons.length, 2);
     assert.equal(buttons[0].attributes['data-report-id'], '2026-05-17-weekly-progress');
+    assert.equal(buttons[0].attributes['aria-current'], 'false');
     assert.equal(buttons[0].classList.contains('project-card--active'), false);
     assert.equal(buttons[1].attributes['data-report-id'], 'demo-base');
+    assert.equal(buttons[1].attributes['aria-current'], 'page');
     assert.equal(buttons[1].classList.contains('project-card--active'), true);
 
     buttons[0].dispatchEvent({ type: 'click' });

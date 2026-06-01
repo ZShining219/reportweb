@@ -65,6 +65,7 @@ export function renderProjectManager(container, model, { onSelectProject } = {})
     button.type = 'button';
     button.className = project.active ? 'project-card project-card--active' : 'project-card';
     button.setAttribute('data-report-id', project.reportId);
+    button.setAttribute('aria-current', project.active ? 'page' : 'false');
     button.addEventListener('click', () => onSelectProject?.(project.reportId));
 
     const title = textNode('span', 'project-card__title', project.title);
