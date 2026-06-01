@@ -334,7 +334,7 @@ h3 {
   display: grid;
   min-height: min(62vh, 620px);
   place-items: center;
-  padding: 28px;
+  padding: var(--ui-space-7);
 }
 
 .project-manager-shell[hidden] {
@@ -349,7 +349,7 @@ h3 {
 
 .project-manager__header {
   display: grid;
-  gap: 4px;
+  gap: var(--ui-space-1);
 }
 
 .project-manager__title {
@@ -369,14 +369,15 @@ h3 {
 .project-manager__list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
+  gap: var(--ui-space-3);
 }
 
 .project-card {
   display: grid;
-  gap: 8px;
+  gap: var(--ui-space-2);
+  height: auto;
   min-height: 128px;
-  padding: 16px;
+  padding: var(--ui-space-4);
   text-align: left;
   border-color: color-mix(in srgb, var(--paper-2) 72%, var(--ink) 20%);
   border-radius: var(--ui-radius-md);
@@ -393,6 +394,7 @@ h3 {
 }
 
 .project-card__title {
+  overflow-wrap: anywhere;
   color: var(--ink);
   font-weight: 800;
 }
