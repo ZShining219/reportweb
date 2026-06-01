@@ -5,7 +5,9 @@ export function createNarrativeIslandViewModel({
   opening = false,
   closing = false,
   position = { x: 0, y: 0 },
-  dragging = false
+  dragging = false,
+  showProjectButton = false,
+  workspaceView = 'report'
 } = {}) {
   const nodes = state?.story_tree?.nodes || [];
   const byId = new Map(nodes.map((node) => [node.id, node]));
@@ -29,11 +31,13 @@ export function createNarrativeIslandViewModel({
       x: position.x ?? 0,
       y: position.y ?? 0
     },
-    dragging
+    dragging,
+    showProjectButton,
+    projectButtonActive: workspaceView === 'project-manager'
   };
 }
 
-export function renderNarrativeIsland(container, model, { onToggle, onBeginDrag, renderMap } = {}) {
+export function renderNarrativeIsland(container, model, { onToggle, onBeginDrag, onOpenProjectManager, renderMap } = {}) {
   const root = document.createElement('section');
   const rootClasses = ['narrative-island'];
   if (model.expanded) rootClasses.push('narrative-island--expanded');
@@ -54,11 +58,15 @@ export function renderNarrativeIsland(container, model, { onToggle, onBeginDrag,
     if (isNarrativeIslandDragBlocked(event.target)) return;
     onBeginDrag?.(event);
   });
-  rail.append(
+  const railItems = [
     capsuleText('narrative-island__meta', model.parentTitle),
     currentButton(model, onToggle),
     capsuleText('narrative-island__next', model.nextLabel)
-  );
+  ];
+  if (model.showProjectButton) {
+    railItems.push(projectButton(model, onOpenProjectManager));
+  }
+  rail.append(...railItems);
   surface.append(rail);
 
   if (model.expanded || model.closing) {
@@ -89,6 +97,17 @@ function currentButton(model, onToggle) {
   label.textContent = model.currentTitle;
 
   button.append(label);
+  return button;
+}
+
+function projectButton(model, onOpenProjectManager) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'narrative-island__project-button';
+  button.setAttribute('aria-label', '打开项目管理');
+  button.setAttribute('aria-pressed', model.projectButtonActive ? 'true' : 'false');
+  button.textContent = '项目';
+  button.addEventListener('click', () => onOpenProjectManager?.());
   return button;
 }
 

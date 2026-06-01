@@ -141,6 +141,38 @@ test('narrative island renderer exposes persistent position and drag callback', 
   }
 });
 
+test('narrative island renderer exposes a project manager button', () => {
+  const previousDocument = global.document;
+  const document = createFakeDocument();
+  global.document = document;
+
+  try {
+    const container = new FakeElement('div');
+    const calls = [];
+    const model = createNarrativeIslandViewModel({
+      state,
+      currentNodeId: 'progress',
+      showProjectButton: true,
+      workspaceView: 'report'
+    });
+
+    renderNarrativeIsland(container, model, {
+      onOpenProjectManager: () => calls.push('projects')
+    });
+
+    const root = container.children[0];
+    const projectButton = root.findAll((node) => node.classList.contains('narrative-island__project-button'))[0];
+
+    assert.equal(projectButton.textContent, '项目');
+    assert.equal(projectButton.attributes['aria-pressed'], 'false');
+
+    projectButton.dispatchEvent({ type: 'click' });
+    assert.deepEqual(calls, ['projects']);
+  } finally {
+    global.document = previousDocument;
+  }
+});
+
 class FakeElement {
   constructor(tagName) {
     this.tagName = tagName;
