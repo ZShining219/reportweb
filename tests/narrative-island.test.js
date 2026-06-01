@@ -107,6 +107,40 @@ test('narrative island renderer keeps the map mounted during closing animation',
   }
 });
 
+test('narrative island renderer exposes persistent position and drag callback', () => {
+  const previousDocument = global.document;
+  const document = createFakeDocument();
+  global.document = document;
+
+  try {
+    const container = new FakeElement('div');
+    const dragEvents = [];
+    const model = createNarrativeIslandViewModel({
+      state,
+      currentNodeId: 'progress',
+      position: { x: 18, y: -12 },
+      dragging: true
+    });
+
+    renderNarrativeIsland(container, model, {
+      onBeginDrag: (event) => dragEvents.push(event)
+    });
+
+    const root = container.children[0];
+    const rail = root.findAll((node) => node.classList.contains('narrative-island__rail'))[0];
+
+    assert.equal(root.classList.contains('narrative-island--dragging'), true);
+    assert.equal(root.style.getPropertyValue('--narrative-island-x'), '18px');
+    assert.equal(root.style.getPropertyValue('--narrative-island-y'), '-12px');
+
+    const event = { type: 'pointerdown', button: 0 };
+    rail.dispatchEvent(event);
+    assert.deepEqual(dragEvents, [event]);
+  } finally {
+    global.document = previousDocument;
+  }
+});
+
 class FakeElement {
   constructor(tagName) {
     this.tagName = tagName;
@@ -114,7 +148,11 @@ class FakeElement {
     this.children = [];
     this.dataset = {};
     this.eventListeners = new Map();
-    this.style = {};
+    this.styleValues = new Map();
+    this.style = {
+      setProperty: (name, value) => this.styleValues.set(name, String(value)),
+      getPropertyValue: (name) => this.styleValues.get(name) || ''
+    };
     this._textContent = '';
     this.classList = {
       add: (...tokens) => this.setClassTokens([...this.classTokens(), ...tokens]),

@@ -340,6 +340,7 @@ h3 {
   width: min(100%, 760px);
   color: var(--ink);
   filter: drop-shadow(0 18px 38px rgba(37, 49, 58, 0.12));
+  transform: translate(var(--narrative-island-x, 0), var(--narrative-island-y, 0));
 }
 
 .narrative-island__surface {
@@ -390,6 +391,13 @@ h3 {
   gap: 6px;
   align-items: center;
   min-height: 38px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.narrative-island--dragging .narrative-island__rail {
+  cursor: grabbing;
 }
 
 .narrative-island__current-button {

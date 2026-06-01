@@ -1,4 +1,12 @@
-export function createNarrativeIslandViewModel({ state, currentNodeId, expanded = false, opening = false, closing = false } = {}) {
+export function createNarrativeIslandViewModel({
+  state,
+  currentNodeId,
+  expanded = false,
+  opening = false,
+  closing = false,
+  position = { x: 0, y: 0 },
+  dragging = false
+} = {}) {
   const nodes = state?.story_tree?.nodes || [];
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const current = byId.get(currentNodeId) || byId.get(state?.story_tree?.root) || null;
@@ -16,24 +24,36 @@ export function createNarrativeIslandViewModel({ state, currentNodeId, expanded 
     childCount: children.length,
     expanded,
     opening,
-    closing
+    closing,
+    position: {
+      x: position.x ?? 0,
+      y: position.y ?? 0
+    },
+    dragging
   };
 }
 
-export function renderNarrativeIsland(container, model, { onToggle, renderMap } = {}) {
+export function renderNarrativeIsland(container, model, { onToggle, onBeginDrag, renderMap } = {}) {
   const root = document.createElement('section');
   const rootClasses = ['narrative-island'];
   if (model.expanded) rootClasses.push('narrative-island--expanded');
   if (model.opening) rootClasses.push('narrative-island--opening');
   if (model.closing) rootClasses.push('narrative-island--closing');
+  if (model.dragging) rootClasses.push('narrative-island--dragging');
   root.className = rootClasses.join(' ');
   root.setAttribute('aria-label', '叙事岛');
+  root.style.setProperty('--narrative-island-x', `${Math.round(model.position?.x ?? 0)}px`);
+  root.style.setProperty('--narrative-island-y', `${Math.round(model.position?.y ?? 0)}px`);
 
   const surface = document.createElement('div');
   surface.className = 'narrative-island__surface';
 
   const rail = document.createElement('div');
   rail.className = 'narrative-island__rail';
+  rail.addEventListener('pointerdown', (event) => {
+    if (isNarrativeIslandDragBlocked(event.target)) return;
+    onBeginDrag?.(event);
+  });
   rail.append(
     capsuleText('narrative-island__meta', model.parentTitle),
     currentButton(model, onToggle),
@@ -77,6 +97,10 @@ function capsuleText(className, text) {
   node.className = className;
   node.textContent = text;
   return node;
+}
+
+function isNarrativeIslandDragBlocked(target) {
+  return Boolean(target?.closest?.('button, a, input, textarea, select, [contenteditable="true"]'));
 }
 
 function nextRouteNode(state, currentNodeId, byId) {

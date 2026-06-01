@@ -13,11 +13,20 @@ import {
 import { createEditFeedbackModel, renderEditFeedback } from './modules/editFeedback.js';
 import { createInspectorViewModel, renderInspectorPanel } from './modules/inspectorPanel.js';
 import { createNarrativeIslandViewModel, renderNarrativeIsland } from './modules/narrativeIsland.js';
+import {
+  beginNarrativeIslandDrag,
+  createNarrativeIslandPositionState,
+  endNarrativeIslandDrag,
+  loadNarrativeIslandPosition,
+  saveNarrativeIslandPosition,
+  updateNarrativeIslandDrag
+} from './modules/narrativeIslandPosition.js';
 import { createRevisionViewModel, renderRevisionPanel } from './modules/revisionPanel.js';
 import { createTreeListModel, renderTreeList } from './modules/treeList.js';
 
 const reportId = '2026-05-17-weekly-progress';
 const reportApi = createReportApi();
+const localPreferenceStorage = getLocalPreferenceStorage();
 
 let payload = null;
 let currentNodeId = 'root';
@@ -36,6 +45,7 @@ let narrativeIslandOpening = false;
 let narrativeIslandClosing = false;
 let narrativeIslandOpenTimer = null;
 let narrativeIslandCloseTimer = null;
+let narrativeIslandPosition = createNarrativeIslandPositionState(loadNarrativeIslandPosition(localPreferenceStorage, reportId) || {});
 const NARRATIVE_ISLAND_OPEN_MS = 620;
 const NARRATIVE_ISLAND_CLOSE_MS = 620;
 
@@ -165,12 +175,17 @@ function renderNarrativeIslandView(state) {
     currentNodeId,
     expanded: narrativeIslandExpanded,
     opening: narrativeIslandOpening,
-    closing: narrativeIslandClosing
+    closing: narrativeIslandClosing,
+    position: narrativeIslandPosition,
+    dragging: narrativeIslandPosition.dragging
   });
 
   renderNarrativeIsland(elements.narrativeIsland, model, {
     onToggle() {
       toggleNarrativeIsland();
+    },
+    onBeginDrag(event) {
+      beginNarrativeIslandDragInteraction(event);
     },
     renderMap(mapSlot) {
       renderNodeNavigator(mapSlot, {
@@ -189,6 +204,29 @@ function renderNarrativeIslandView(state) {
       });
     }
   });
+}
+
+function beginNarrativeIslandDragInteraction(event) {
+  if (!beginNarrativeIslandDrag(narrativeIslandPosition, event)) return;
+
+  event.preventDefault?.();
+  event.currentTarget?.setPointerCapture?.(event.pointerId);
+  render();
+
+  const onMove = (moveEvent) => {
+    if (!updateNarrativeIslandDrag(narrativeIslandPosition, moveEvent)) return;
+    render();
+  };
+  const onUp = () => {
+    endNarrativeIslandDrag(narrativeIslandPosition);
+    saveNarrativeIslandPosition(localPreferenceStorage, reportId, narrativeIslandPosition);
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    render();
+  };
+
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
 }
 
 function toggleNarrativeIsland() {
@@ -230,6 +268,14 @@ function clearNarrativeIslandCloseTimer() {
   if (!narrativeIslandCloseTimer) return;
   clearTimeout(narrativeIslandCloseTimer);
   narrativeIslandCloseTimer = null;
+}
+
+function getLocalPreferenceStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
 function renderInspector(state) {
