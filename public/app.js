@@ -132,19 +132,25 @@ async function loadProjectList() {
 async function loadReport(nextReportId = reportId) {
   if (!nextReportId) {
     workspaceView = 'project-manager';
+    updateUrlState({ report: reportId, view: 'projects' });
     render();
     setStatus('暂无可用项目');
     return;
   }
 
-  reportId = nextReportId;
-  payload = await reportApi.loadReport(reportId);
-  workspaceView = 'report';
-  narrativeIslandPosition = createNarrativeIslandPositionState(loadNarrativeIslandPosition(localPreferenceStorage, reportId) || {});
-  resetReportSession(payload.state.story_tree.root);
-  updateUrlState({ report: reportId, view: null });
-  render();
-  setStatus('数据已载入');
+  try {
+    const nextPayload = await reportApi.loadReport(nextReportId);
+    reportId = nextReportId;
+    payload = nextPayload;
+    workspaceView = 'report';
+    narrativeIslandPosition = createNarrativeIslandPositionState(loadNarrativeIslandPosition(localPreferenceStorage, reportId) || {});
+    resetReportSession(payload.state.story_tree.root);
+    updateUrlState({ report: reportId, view: null });
+    render();
+    setStatus('数据已载入');
+  } catch (error) {
+    handleReportLoadError(error);
+  }
 }
 
 function resetReportSession(nodeId) {
@@ -157,7 +163,20 @@ function resetReportSession(nodeId) {
   clipboard = null;
   collapsedNodeIds = new Set();
   stageViewport = createStageViewportState();
+  resetNarrativeIslandTransientState();
   clearEditFeedback();
+}
+
+function handleReportLoadError(error) {
+  if (!payload) {
+    reportId = '';
+  }
+  workspaceView = 'project-manager';
+  projectListStatus = 'error';
+  projectListError = error.message;
+  updateUrlState({ report: reportId, view: 'projects' });
+  render();
+  setStatus('项目载入失败');
 }
 
 function render() {
@@ -324,6 +343,7 @@ function openProjectManager() {
   baseRevision = null;
   selectedIds.clear();
   clipboard = null;
+  resetNarrativeIslandTransientState();
   clearEditFeedback();
   updateUrlState({ report: reportId, view: 'projects' });
   render();
@@ -392,6 +412,14 @@ function clearNarrativeIslandCloseTimer() {
   if (!narrativeIslandCloseTimer) return;
   clearTimeout(narrativeIslandCloseTimer);
   narrativeIslandCloseTimer = null;
+}
+
+function resetNarrativeIslandTransientState() {
+  clearNarrativeIslandOpenTimer();
+  clearNarrativeIslandCloseTimer();
+  narrativeIslandExpanded = false;
+  narrativeIslandOpening = false;
+  narrativeIslandClosing = false;
 }
 
 function getLocalPreferenceStorage() {
@@ -611,7 +639,7 @@ async function saveRevision() {
 }
 
 function handleKeydown(event) {
-  if (handleStageViewportKey(stageViewport, event)) {
+  if (workspaceView === 'report' && payload && handleStageViewportKey(stageViewport, event)) {
     applyStageViewport(elements.stage, stageViewport);
     event.preventDefault();
     return;
@@ -623,7 +651,7 @@ function handleKeydown(event) {
     return;
   }
 
-  if (!payload) return;
+  if (workspaceView !== 'report' || !payload) return;
 
   if ((event.metaKey || event.ctrlKey) && mode === 'edit') {
     if (event.key.toLowerCase() === 'c') {
@@ -663,7 +691,7 @@ function handleKeydown(event) {
 }
 
 function handleKeyup(event) {
-  if (handleStageViewportKey(stageViewport, event)) {
+  if (workspaceView === 'report' && payload && handleStageViewportKey(stageViewport, event)) {
     applyStageViewport(elements.stage, stageViewport);
     event.preventDefault();
   }
