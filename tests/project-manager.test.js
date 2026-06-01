@@ -76,11 +76,16 @@ test('project manager renderer shows projects and emits selected report id', () 
     const buttons = root.findAll((node) => node.tagName === 'button');
 
     assert.equal(root.classList.contains('project-manager'), true);
+    assert.equal(root.attributes['aria-label'], '项目管理');
     assert.equal(root.textContent.includes('项目管理'), true);
     assert.equal(root.textContent.includes('周进展汇报'), true);
     assert.equal(root.textContent.includes('2026-05-17-weekly-progress'), true);
     assert.equal(root.textContent.includes('基础版本'), true);
     assert.equal(buttons.length, 2);
+    assert.equal(buttons[0].attributes['data-report-id'], '2026-05-17-weekly-progress');
+    assert.equal(buttons[0].classList.contains('project-card--active'), false);
+    assert.equal(buttons[1].attributes['data-report-id'], 'demo-base');
+    assert.equal(buttons[1].classList.contains('project-card--active'), true);
 
     buttons[0].dispatchEvent({ type: 'click' });
     assert.deepEqual(selected, ['2026-05-17-weekly-progress']);
