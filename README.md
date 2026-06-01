@@ -91,11 +91,11 @@ http://localhost:5173
 npm test
 ```
 
-当前前端 Demo 默认加载的汇报 ID 写在 `public/app.js`：
+初始加载规则：
 
-```js
-const reportId = '2026-05-17-weekly-progress';
-```
+- 访问 `http://localhost:5173/?report=<id>` 可直接打开指定汇报项目；
+- 未指定 `report` 时，前端会读取 `/api/reports` 并加载第一个可用汇报；
+- 访问 `http://localhost:5173/?view=projects` 可直接打开项目管理画面。
 
 ## 项目结构
 
