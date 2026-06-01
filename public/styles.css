@@ -330,6 +330,80 @@ h3 {
   background: #fff9eb;
 }
 
+.project-manager-shell {
+  display: grid;
+  min-height: min(62vh, 620px);
+  place-items: center;
+  padding: 28px;
+}
+
+.project-manager-shell[hidden] {
+  display: none;
+}
+
+.project-manager {
+  display: grid;
+  width: min(100%, 860px);
+  gap: 18px;
+}
+
+.project-manager__header {
+  display: grid;
+  gap: 4px;
+}
+
+.project-manager__title {
+  margin: 0;
+  color: var(--ink);
+}
+
+.project-manager__state {
+  margin: 0;
+  color: var(--muted);
+}
+
+.project-manager__state--error {
+  color: var(--rose);
+}
+
+.project-manager__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.project-card {
+  display: grid;
+  gap: 8px;
+  min-height: 128px;
+  padding: 16px;
+  text-align: left;
+  border-color: color-mix(in srgb, var(--paper-2) 72%, var(--ink) 20%);
+  border-radius: var(--ui-radius-md);
+  background: color-mix(in srgb, var(--paper-2) 84%, transparent);
+  box-shadow: var(--ui-shadow-panel);
+}
+
+.project-card:hover {
+  transform: translateY(-1px);
+}
+
+.project-card--active {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--ink) 14%);
+}
+
+.project-card__title {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.project-card__id,
+.project-card__revision {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .narrative-island-shell {
   display: grid;
   place-items: center;
@@ -387,7 +461,7 @@ h3 {
 
 .narrative-island__rail {
   display: grid;
-  grid-template-columns: minmax(0, 0.75fr) minmax(120px, 1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 0.75fr) minmax(120px, 1fr) minmax(0, 0.9fr) auto;
   gap: 6px;
   align-items: center;
   min-height: 38px;
@@ -426,6 +500,19 @@ h3 {
 .narrative-island__current-button:focus-visible {
   outline: 1px solid var(--ink);
   outline-offset: 4px;
+}
+
+.narrative-island__project-button {
+  min-width: 58px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.narrative-island__project-button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--ink) 12%);
+  background: color-mix(in srgb, var(--accent) 16%, var(--paper-2));
 }
 
 .narrative-island__current,

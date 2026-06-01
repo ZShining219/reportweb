@@ -25,3 +25,12 @@ test('styles define a restrained glass narrative island', async () => {
   assert.match(styles, /background:\s*color-mix\(in srgb, var\(--paper-2\)/);
   assert.match(styles, /box-shadow:\s*var\(--shadow\)/);
 });
+
+test('styles define project manager and narrative island project button rules', async () => {
+  const css = await readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.project-manager-shell/);
+  assert.match(css, /\.project-manager__/);
+  assert.match(css, /\.project-card/);
+  assert.match(css, /\.narrative-island__project-button/);
+});
