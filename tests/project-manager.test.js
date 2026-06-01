@@ -117,6 +117,39 @@ test('project manager renderer shows loading, empty, and error states', () => {
   }
 });
 
+test('project manager renderer keeps projects visible with a non-blocking error', () => {
+  const previousDocument = global.document;
+  const document = createFakeDocument();
+  global.document = document;
+
+  try {
+    const container = new FakeElement('div');
+    const selected = [];
+
+    renderProjectManager(
+      container,
+      createProjectManagerViewModel({
+        projects: [weeklyPayload],
+        status: 'ready',
+        errorMessage: '项目载入失败'
+      }),
+      {
+        onSelectProject: (reportId) => selected.push(reportId)
+      }
+    );
+
+    const buttons = container.findAll((node) => node.tagName === 'button');
+    assert.equal(container.textContent.includes('项目载入失败'), true);
+    assert.equal(buttons.length, 1);
+    assert.equal(buttons[0].attributes['data-report-id'], '2026-05-17-weekly-progress');
+
+    buttons[0].dispatchEvent({ type: 'click' });
+    assert.deepEqual(selected, ['2026-05-17-weekly-progress']);
+  } finally {
+    global.document = previousDocument;
+  }
+});
+
 class FakeElement {
   constructor(tagName) {
     this.tagName = tagName;

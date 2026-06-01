@@ -142,6 +142,9 @@ async function loadReport(nextReportId = reportId) {
     const nextPayload = await reportApi.loadReport(nextReportId);
     reportId = nextReportId;
     payload = nextPayload;
+    upsertProjectPayload(nextPayload);
+    projectListStatus = 'ready';
+    projectListError = '';
     workspaceView = 'report';
     narrativeIslandPosition = createNarrativeIslandPositionState(loadNarrativeIslandPosition(localPreferenceStorage, reportId) || {});
     resetReportSession(payload.state.story_tree.root);
@@ -172,11 +175,28 @@ function handleReportLoadError(error) {
     reportId = '';
   }
   workspaceView = 'project-manager';
-  projectListStatus = 'error';
+  projectListStatus = projectPayloads.length ? 'ready' : 'error';
   projectListError = error.message;
   updateUrlState({ report: reportId, view: 'projects' });
   render();
   setStatus('项目载入失败');
+}
+
+function upsertProjectPayload(nextPayload) {
+  const nextReportId = nextPayload.reportId || nextPayload.report?.id || '';
+  if (!nextReportId) return;
+
+  const index = projectPayloads.findIndex((item) => {
+    const itemReportId = item.reportId || item.report?.id || '';
+    return itemReportId === nextReportId;
+  });
+
+  if (index >= 0) {
+    projectPayloads = projectPayloads.map((item, itemIndex) => (itemIndex === index ? nextPayload : item));
+    return;
+  }
+
+  projectPayloads = [...projectPayloads, nextPayload];
 }
 
 function render() {
@@ -477,6 +497,9 @@ function renderInspector(state) {
   renderRevisionPanel(revisionContainer, revisionModel, {
     onSelectRevision: async (revisionId) => {
       payload = await reportApi.setCurrentRevision(reportId, revisionId);
+      upsertProjectPayload(payload);
+      projectListStatus = 'ready';
+      projectListError = '';
       mode = 'play';
       draftState = null;
       baseState = null;
@@ -627,6 +650,9 @@ async function saveRevision() {
     summary: `保存 ${findNode(currentNodeId, draftState).title} 的前端修改`,
     changes
   });
+  upsertProjectPayload(payload);
+  projectListStatus = 'ready';
+  projectListError = '';
 
   mode = 'play';
   draftState = null;

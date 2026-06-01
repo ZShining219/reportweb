@@ -57,6 +57,10 @@ export function renderProjectManager(container, model, { onSelectProject } = {})
     return;
   }
 
+  if (model.errorMessage) {
+    root.append(textNode('p', 'project-manager__state project-manager__state--error', model.errorMessage));
+  }
+
   const list = document.createElement('div');
   list.className = 'project-manager__list';
 
