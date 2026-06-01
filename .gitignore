@@ -4,3 +4,4 @@ node_modules/
 *.log
 .playwright-mcp/
 .local/
+.worktrees/
