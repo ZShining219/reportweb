@@ -287,9 +287,6 @@ function renderProjectManagerView() {
   renderEditFeedback(elements.editFeedbackDock, editFeedback);
 
   renderProjectBoard(elements.stage, model, {
-    onSelectProject(reportIdToSelect) {
-      selectProject(reportIdToSelect);
-    },
     onEnterProject(reportIdToEnter) {
       loadReport(reportIdToEnter);
     }

@@ -184,14 +184,13 @@ test('project manager renderer keeps projects visible with a non-blocking error'
   }
 });
 
-test('project board selects cards separately from entering a report', () => {
+test('project board enters reports from card and explicit enter button', () => {
   const previousDocument = global.document;
   const document = createFakeDocument();
   global.document = document;
 
   try {
     const container = new FakeElement('div');
-    const selected = [];
     const entered = [];
     const model = createProjectManagerViewModel({
       projects: [weeklyPayload, basePayload],
@@ -201,7 +200,6 @@ test('project board selects cards separately from entering a report', () => {
     });
 
     renderProjectBoard(container, model, {
-      onSelectProject: (reportId) => selected.push(reportId),
       onEnterProject: (reportId) => entered.push(reportId)
     });
 
@@ -216,11 +214,10 @@ test('project board selects cards separately from entering a report', () => {
     assert.equal(cards[1].attributes['aria-selected'], 'true');
 
     cards[0].dispatchEvent({ type: 'click' });
-    assert.deepEqual(selected, ['2026-05-17-weekly-progress']);
-    assert.deepEqual(entered, []);
+    assert.deepEqual(entered, ['2026-05-17-weekly-progress']);
 
     enterButtons[0].dispatchEvent({ type: 'click', stopPropagation() {} });
-    assert.deepEqual(entered, ['2026-05-17-weekly-progress']);
+    assert.deepEqual(entered, ['2026-05-17-weekly-progress', '2026-05-17-weekly-progress']);
   } finally {
     global.document = previousDocument;
   }

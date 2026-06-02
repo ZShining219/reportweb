@@ -97,7 +97,7 @@ export function renderProjectManager(container, model, { onSelectProject } = {})
   container.replaceChildren(root);
 }
 
-export function renderProjectBoard(container, model, { onSelectProject, onEnterProject } = {}) {
+export function renderProjectBoard(container, model, { onEnterProject } = {}) {
   const root = document.createElement('section');
   root.className = 'project-board';
   root.setAttribute('aria-label', '项目看板');
@@ -123,7 +123,7 @@ export function renderProjectBoard(container, model, { onSelectProject, onEnterP
     card.setAttribute('data-report-id', project.reportId);
     card.setAttribute('aria-current', project.active ? 'page' : 'false');
     card.setAttribute('aria-selected', project.selected ? 'true' : 'false');
-    card.addEventListener('click', () => onSelectProject?.(project.reportId));
+    card.addEventListener('click', () => onEnterProject?.(project.reportId));
 
     const enterButton = document.createElement('button');
     enterButton.type = 'button';
