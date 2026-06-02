@@ -7,8 +7,31 @@ export function createNarrativeIslandViewModel({
   position = { x: 0, y: 0 },
   dragging = false,
   showProjectButton = false,
-  workspaceView = 'report'
+  workspaceView = 'report',
+  selectedProjectTitle = '',
+  selectedProjectId = '',
+  canEnterSelectedProject = false
 } = {}) {
+  if (workspaceView === 'project-manager') {
+    return {
+      kind: 'project-manager',
+      projectStatusLabel: '项目管理',
+      selectedProjectTitle: selectedProjectTitle || '未选择项目',
+      selectedProjectId,
+      canEnterSelectedProject,
+      expanded: false,
+      opening: false,
+      closing: false,
+      position: {
+        x: position.x ?? 0,
+        y: position.y ?? 0
+      },
+      dragging,
+      showProjectButton: false,
+      projectButtonActive: true
+    };
+  }
+
   const nodes = state?.story_tree?.nodes || [];
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const current = byId.get(currentNodeId) || byId.get(state?.story_tree?.root) || null;
@@ -17,6 +40,7 @@ export function createNarrativeIslandViewModel({
   const children = (current?.children || []).map((childId) => byId.get(childId)).filter(Boolean);
 
   return {
+    kind: 'report',
     currentId: current?.id || null,
     currentTitle: current?.title || '未选择节点',
     parentTitle: parent?.title || '根节点',
@@ -37,9 +61,14 @@ export function createNarrativeIslandViewModel({
   };
 }
 
-export function renderNarrativeIsland(container, model, { onToggle, onBeginDrag, onOpenProjectManager, renderMap } = {}) {
+export function renderNarrativeIsland(
+  container,
+  model,
+  { onToggle, onBeginDrag, onOpenProjectManager, onEnterSelectedProject, renderMap } = {}
+) {
   const root = document.createElement('section');
   const rootClasses = ['narrative-island'];
+  if (model.kind === 'project-manager') rootClasses.push('narrative-island--project-manager');
   if (model.expanded) rootClasses.push('narrative-island--expanded');
   if (model.opening) rootClasses.push('narrative-island--opening');
   if (model.closing) rootClasses.push('narrative-island--closing');
@@ -58,11 +87,13 @@ export function renderNarrativeIsland(container, model, { onToggle, onBeginDrag,
     if (isNarrativeIslandDragBlocked(event.target)) return;
     onBeginDrag?.(event);
   });
-  const railItems = [
-    capsuleText('narrative-island__meta', model.parentTitle),
-    currentButton(model, onToggle),
-    capsuleText('narrative-island__next', model.nextLabel)
-  ];
+  const railItems = model.kind === 'project-manager'
+    ? projectManagerRailItems(model, onEnterSelectedProject)
+    : [
+        capsuleText('narrative-island__meta', model.parentTitle),
+        currentButton(model, onToggle),
+        capsuleText('narrative-island__next', model.nextLabel)
+      ];
   if (model.showProjectButton) {
     railItems.push(projectButton(model, onOpenProjectManager));
   }
@@ -82,6 +113,27 @@ export function renderNarrativeIsland(container, model, { onToggle, onBeginDrag,
 
   root.append(surface);
   container.replaceChildren(root);
+}
+
+function projectManagerRailItems(model, onEnterSelectedProject) {
+  const title = capsuleText('narrative-island__meta', model.projectStatusLabel);
+  const selected = document.createElement('span');
+  selected.className = 'narrative-island__current narrative-island__project-current';
+  selected.textContent = model.selectedProjectTitle;
+
+  const enterButton = document.createElement('button');
+  enterButton.type = 'button';
+  enterButton.className = 'narrative-island__enter-project';
+  enterButton.disabled = !model.canEnterSelectedProject;
+  enterButton.textContent = '进入汇报';
+  enterButton.addEventListener('click', () => onEnterSelectedProject?.());
+
+  return [
+    title,
+    selected,
+    capsuleText('narrative-island__next', model.selectedProjectId || '项目看板'),
+    enterButton
+  ];
 }
 
 function currentButton(model, onToggle) {

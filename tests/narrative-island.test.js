@@ -173,6 +173,43 @@ test('narrative island renderer exposes a project manager button', () => {
   }
 });
 
+test('narrative island renders project manager state switcher without report node labels', () => {
+  const previousDocument = global.document;
+  const document = createFakeDocument();
+  global.document = document;
+
+  try {
+    const container = new FakeElement('div');
+    const calls = [];
+    const model = createNarrativeIslandViewModel({
+      workspaceView: 'project-manager',
+      selectedProjectTitle: '周进展汇报',
+      selectedProjectId: '2026-05-17-weekly-progress',
+      canEnterSelectedProject: true
+    });
+
+    renderNarrativeIsland(container, model, {
+      onEnterSelectedProject: () => calls.push('enter')
+    });
+
+    const root = container.children[0];
+    const enterButton = root.findAll((node) => node.classList.contains('narrative-island__enter-project'))[0];
+
+    assert.equal(model.kind, 'project-manager');
+    assert.equal(root.classList.contains('narrative-island--project-manager'), true);
+    assert.equal(root.textContent.includes('项目管理'), true);
+    assert.equal(root.textContent.includes('周进展汇报'), true);
+    assert.equal(root.textContent.includes('未选择节点'), false);
+    assert.equal(root.textContent.includes('末端节点'), false);
+    assert.equal(enterButton.textContent, '进入汇报');
+
+    enterButton.dispatchEvent({ type: 'click' });
+    assert.deepEqual(calls, ['enter']);
+  } finally {
+    global.document = previousDocument;
+  }
+});
+
 class FakeElement {
   constructor(tagName) {
     this.tagName = tagName;
