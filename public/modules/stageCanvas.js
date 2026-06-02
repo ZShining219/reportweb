@@ -40,6 +40,20 @@ export function renderStage(container, options) {
   };
 }
 
+export function resetStageSurface(container) {
+  const previous = container[PAN_POINTER_DOWN_KEY];
+  if (previous) {
+    container.removeEventListener('pointerdown', previous, true);
+  }
+
+  container[PAN_POINTER_DOWN_KEY] = null;
+  delete container.dataset.background;
+  container.style.transform = '';
+  container.style.cursor = '';
+  container.classList.remove('is-stage-pan-ready', 'is-stage-panning');
+  container.onclick = null;
+}
+
 function bindStagePan(container, options) {
   const previous = container[PAN_POINTER_DOWN_KEY];
   if (previous) {

@@ -50,6 +50,7 @@ test('styles define project manager and narrative island project button rules', 
   assert.match(projectBoardCard, /min-height:\s*150px/);
   assert.match(projectDetails, /display:\s*grid/);
   assert.doesNotMatch(css, /\.project-manager-shell/);
+  assert.doesNotMatch(css, /\.project-card/);
   assert.match(css, /\.project-board\s*{/);
   assert.match(css, /\.project-list-panel\s*{/);
   assert.match(css, /\.project-details\s*{/);

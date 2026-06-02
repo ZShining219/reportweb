@@ -5,8 +5,7 @@ import {
   createProjectManagerViewModel,
   renderProjectBoard,
   renderProjectDetails,
-  renderProjectList,
-  renderProjectManager
+  renderProjectList
 } from '../public/modules/projectManager.js';
 
 const weeklyPayload = {
@@ -88,100 +87,18 @@ test('project manager view model tracks selected project and summary counts', ()
   assert.equal(model.projects[1].revisionLabel, '基础版本');
 });
 
-test('project manager renderer shows projects and emits selected report id', () => {
-  const previousDocument = global.document;
-  const document = createFakeDocument();
-  global.document = document;
+test('project manager view model marks fallback selected project consistently', () => {
+  const model = createProjectManagerViewModel({
+    projects: [weeklyPayload, basePayload],
+    activeReportId: 'demo-base',
+    selectedProjectId: 'missing-project',
+    status: 'ready'
+  });
 
-  try {
-    const container = new FakeElement('div');
-    const selected = [];
-    const model = createProjectManagerViewModel({
-      projects: [weeklyPayload, basePayload],
-      activeReportId: 'demo-base',
-      status: 'ready'
-    });
-
-    renderProjectManager(container, model, {
-      onSelectProject: (reportId) => selected.push(reportId)
-    });
-
-    const root = container.children[0];
-    const buttons = root.findAll((node) => node.tagName === 'button');
-
-    assert.equal(root.classList.contains('project-manager'), true);
-    assert.equal(root.attributes['aria-label'], '项目管理');
-    assert.equal(root.textContent.includes('项目管理'), true);
-    assert.equal(root.textContent.includes('周进展汇报'), true);
-    assert.equal(root.textContent.includes('2026-05-17-weekly-progress'), true);
-    assert.equal(root.textContent.includes('基础版本'), true);
-    assert.equal(buttons.length, 2);
-    assert.equal(buttons[0].attributes['data-report-id'], '2026-05-17-weekly-progress');
-    assert.equal(buttons[0].attributes['aria-current'], 'false');
-    assert.equal(buttons[0].classList.contains('project-card--active'), false);
-    assert.equal(buttons[1].attributes['data-report-id'], 'demo-base');
-    assert.equal(buttons[1].attributes['aria-current'], 'page');
-    assert.equal(buttons[1].classList.contains('project-card--active'), true);
-
-    buttons[0].dispatchEvent({ type: 'click' });
-    assert.deepEqual(selected, ['2026-05-17-weekly-progress']);
-  } finally {
-    global.document = previousDocument;
-  }
-});
-
-test('project manager renderer shows loading, empty, and error states', () => {
-  const previousDocument = global.document;
-  const document = createFakeDocument();
-  global.document = document;
-
-  try {
-    const container = new FakeElement('div');
-
-    renderProjectManager(container, createProjectManagerViewModel({ status: 'loading' }));
-    assert.equal(container.textContent.includes('正在载入项目'), true);
-
-    renderProjectManager(container, createProjectManagerViewModel({ status: 'ready', projects: [] }));
-    assert.equal(container.textContent.includes('暂无可用项目'), true);
-
-    renderProjectManager(container, createProjectManagerViewModel({ status: 'error', errorMessage: '读取失败' }));
-    assert.equal(container.textContent.includes('读取失败'), true);
-  } finally {
-    global.document = previousDocument;
-  }
-});
-
-test('project manager renderer keeps projects visible with a non-blocking error', () => {
-  const previousDocument = global.document;
-  const document = createFakeDocument();
-  global.document = document;
-
-  try {
-    const container = new FakeElement('div');
-    const selected = [];
-
-    renderProjectManager(
-      container,
-      createProjectManagerViewModel({
-        projects: [weeklyPayload],
-        status: 'ready',
-        errorMessage: '项目载入失败'
-      }),
-      {
-        onSelectProject: (reportId) => selected.push(reportId)
-      }
-    );
-
-    const buttons = container.findAll((node) => node.tagName === 'button');
-    assert.equal(container.textContent.includes('项目载入失败'), true);
-    assert.equal(buttons.length, 1);
-    assert.equal(buttons[0].attributes['data-report-id'], '2026-05-17-weekly-progress');
-
-    buttons[0].dispatchEvent({ type: 'click' });
-    assert.deepEqual(selected, ['2026-05-17-weekly-progress']);
-  } finally {
-    global.document = previousDocument;
-  }
+  assert.equal(model.selectedProjectId, 'demo-base');
+  assert.equal(model.selectedProject.reportId, 'demo-base');
+  assert.equal(model.projects[0].selected, false);
+  assert.equal(model.projects[1].selected, true);
 });
 
 test('project board enters reports from card and explicit enter button', () => {
@@ -212,12 +129,29 @@ test('project board enters reports from card and explicit enter button', () => {
     assert.equal(cards[0].attributes['aria-current'], 'false');
     assert.equal(cards[1].attributes['aria-current'], 'page');
     assert.equal(cards[1].attributes['aria-selected'], 'true');
+    assert.equal(cards[0].attributes.role, 'button');
 
     cards[0].dispatchEvent({ type: 'click' });
     assert.deepEqual(entered, ['2026-05-17-weekly-progress']);
 
-    enterButtons[0].dispatchEvent({ type: 'click', stopPropagation() {} });
+    let stoppedPropagation = false;
+    enterButtons[0].dispatchEvent({
+      type: 'click',
+      stopPropagation() {
+        stoppedPropagation = true;
+      }
+    });
+    assert.equal(stoppedPropagation, true);
     assert.deepEqual(entered, ['2026-05-17-weekly-progress', '2026-05-17-weekly-progress']);
+
+    cards[0].dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault() {} });
+    cards[0].dispatchEvent({ type: 'keydown', key: ' ', preventDefault() {} });
+    assert.deepEqual(entered, [
+      '2026-05-17-weekly-progress',
+      '2026-05-17-weekly-progress',
+      '2026-05-17-weekly-progress',
+      '2026-05-17-weekly-progress'
+    ]);
   } finally {
     global.document = previousDocument;
   }

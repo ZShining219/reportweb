@@ -1,7 +1,7 @@
 import { renderNodeNavigator } from './nodeNavigator.js';
 import { createReportApi } from './modules/reportApi.js';
 import { diffStates } from './modules/patchDiff.js';
-import { renderStage as renderStageCanvas } from './modules/stageCanvas.js';
+import { renderStage as renderStageCanvas, resetStageSurface } from './modules/stageCanvas.js';
 import {
   applyStageViewport,
   beginStagePan,
@@ -275,6 +275,7 @@ function render() {
 function renderProjectManagerView() {
   const model = currentProjectManagerModel();
   elements.stage.parentElement.hidden = false;
+  resetStageSurface(elements.stage);
   elements.stage.classList.add('stage--project-board');
   elements.treeDrawerToggle.textContent = '项目';
   elements.inspectorDrawerToggle.textContent = '详情';

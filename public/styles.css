@@ -339,12 +339,6 @@ h3 {
   background: color-mix(in srgb, var(--paper-2) 88%, var(--accent) 8%);
 }
 
-.project-manager {
-  display: grid;
-  width: min(100%, 860px);
-  gap: 18px;
-}
-
 .project-manager__header {
   display: grid;
   gap: var(--ui-space-1);
@@ -362,46 +356,6 @@ h3 {
 
 .project-manager__state--error {
   color: var(--rose);
-}
-
-.project-manager__list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--ui-space-3);
-}
-
-.project-card {
-  display: grid;
-  gap: var(--ui-space-2);
-  height: auto;
-  min-height: 128px;
-  padding: var(--ui-space-4);
-  text-align: left;
-  border-color: color-mix(in srgb, var(--paper-2) 72%, var(--ink) 20%);
-  border-radius: var(--ui-radius-md);
-  background: color-mix(in srgb, var(--paper-2) 84%, transparent);
-  box-shadow: var(--ui-shadow-panel);
-}
-
-.project-card:hover {
-  transform: translateY(-1px);
-}
-
-.project-card--active {
-  border-color: color-mix(in srgb, var(--accent) 70%, var(--ink) 14%);
-}
-
-.project-card__title {
-  overflow-wrap: anywhere;
-  color: var(--ink);
-  font-weight: 800;
-}
-
-.project-card__id,
-.project-card__revision {
-  overflow-wrap: anywhere;
-  color: var(--muted);
-  font-size: 12px;
 }
 
 .project-board {

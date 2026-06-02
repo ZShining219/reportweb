@@ -5,7 +5,7 @@ export function createProjectManagerViewModel({
   status = 'ready',
   errorMessage = ''
 } = {}) {
-  const normalizedProjects = projects.map((payload) => {
+  const baseProjects = projects.map((payload) => {
     const reportId = payload.reportId || payload.report?.id || '';
     const currentRevision = payload.patch?.current_revision || null;
     const revisions = payload.patch?.revisions || [];
@@ -20,81 +20,30 @@ export function createProjectManagerViewModel({
       revisionCount: revisions.length,
       nodeCount: nodes.length,
       pageCount: pages.length,
-      active: Boolean(activeReportId && reportId === activeReportId),
-      selected: Boolean(selectedProjectId && reportId === selectedProjectId)
+      active: Boolean(activeReportId && reportId === activeReportId)
     };
   });
+  const selectedProjectCandidate = baseProjects.find((project) => selectedProjectId && project.reportId === selectedProjectId)
+    || baseProjects.find((project) => project.active)
+    || baseProjects[0]
+    || null;
+  const effectiveSelectedProjectId = selectedProjectCandidate?.reportId || selectedProjectId;
+  const normalizedProjects = baseProjects.map((project) => ({
+    ...project,
+    selected: Boolean(effectiveSelectedProjectId && project.reportId === effectiveSelectedProjectId)
+  }));
   const selectedProject = normalizedProjects.find((project) => project.selected)
-    || normalizedProjects.find((project) => project.active)
-    || normalizedProjects[0]
     || null;
 
   return {
     status,
     errorMessage,
     activeReportId,
-    selectedProjectId: selectedProject?.reportId || selectedProjectId,
+    selectedProjectId: effectiveSelectedProjectId,
     selectedProject,
     empty: status === 'ready' && normalizedProjects.length === 0,
     projects: normalizedProjects
   };
-}
-
-export function renderProjectManager(container, model, { onSelectProject } = {}) {
-  const root = document.createElement('section');
-  root.className = 'project-manager';
-  root.setAttribute('aria-label', '项目管理');
-
-  const header = document.createElement('header');
-  header.className = 'project-manager__header';
-  header.append(
-    textNode('p', 'project-manager__eyebrow eyebrow', 'ReportWebShow'),
-    textNode('h2', 'project-manager__title', '项目管理')
-  );
-  root.append(header);
-
-  if (model.status === 'loading') {
-    root.append(textNode('p', 'project-manager__state', '正在载入项目'));
-    container.replaceChildren(root);
-    return;
-  }
-
-  if (model.status === 'error') {
-    root.append(textNode('p', 'project-manager__state project-manager__state--error', model.errorMessage || '项目列表载入失败'));
-    container.replaceChildren(root);
-    return;
-  }
-
-  if (model.empty) {
-    root.append(textNode('p', 'project-manager__state', '暂无可用项目'));
-    container.replaceChildren(root);
-    return;
-  }
-
-  if (model.errorMessage) {
-    root.append(textNode('p', 'project-manager__state project-manager__state--error', model.errorMessage));
-  }
-
-  const list = document.createElement('div');
-  list.className = 'project-manager__list';
-
-  for (const project of model.projects) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = project.active ? 'project-card project-card--active' : 'project-card';
-    button.setAttribute('data-report-id', project.reportId);
-    button.setAttribute('aria-current', project.active ? 'page' : 'false');
-    button.addEventListener('click', () => onSelectProject?.(project.reportId));
-
-    const title = textNode('span', 'project-card__title', project.title);
-    const reportId = textNode('span', 'project-card__id', project.reportId);
-    const revision = textNode('span', 'project-card__revision', project.revisionLabel);
-    button.append(title, reportId, revision);
-    list.append(button);
-  }
-
-  root.append(list);
-  container.replaceChildren(root);
 }
 
 export function renderProjectBoard(container, model, { onEnterProject } = {}) {
@@ -120,10 +69,16 @@ export function renderProjectBoard(container, model, { onEnterProject } = {}) {
       project.selected ? 'project-board-card--selected' : ''
     ].filter(Boolean).join(' ');
     card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
     card.setAttribute('data-report-id', project.reportId);
     card.setAttribute('aria-current', project.active ? 'page' : 'false');
     card.setAttribute('aria-selected', project.selected ? 'true' : 'false');
     card.addEventListener('click', () => onEnterProject?.(project.reportId));
+    card.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault?.();
+      onEnterProject?.(project.reportId);
+    });
 
     const enterButton = document.createElement('button');
     enterButton.type = 'button';
