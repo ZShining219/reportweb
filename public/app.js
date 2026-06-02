@@ -21,7 +21,12 @@ import {
   saveNarrativeIslandPosition,
   updateNarrativeIslandDrag
 } from './modules/narrativeIslandPosition.js';
-import { createProjectManagerViewModel, renderProjectManager } from './modules/projectManager.js';
+import {
+  createProjectManagerViewModel,
+  renderProjectBoard,
+  renderProjectDetails,
+  renderProjectList
+} from './modules/projectManager.js';
 import { createRevisionViewModel, renderRevisionPanel } from './modules/revisionPanel.js';
 import { createTreeListModel, renderTreeList } from './modules/treeList.js';
 
@@ -30,6 +35,7 @@ const localPreferenceStorage = getLocalPreferenceStorage();
 
 let reportId = readInitialReportId();
 let workspaceView = readInitialWorkspaceView();
+let selectedProjectId = reportId;
 let projectPayloads = [];
 let projectListStatus = 'loading';
 let projectListError = '';
@@ -75,7 +81,6 @@ const elements = {
   revisionText: document.querySelector('#revisionText'),
   revisionList: document.querySelector('#revisionList'),
   selectionInfo: document.querySelector('#selectionInfo'),
-  projectManager: document.querySelector('#projectManager'),
   narrativeIsland: document.querySelector('#narrativeIsland'),
   inspector: document.querySelector('#inspector')
 };
@@ -121,6 +126,7 @@ async function loadProjectList() {
       payloads.push(await reportApi.loadReport(id));
     }
     projectPayloads = payloads;
+    ensureSelectedProjectId();
     projectListStatus = 'ready';
   } catch (error) {
     projectPayloads = [];
@@ -141,6 +147,7 @@ async function loadReport(nextReportId = reportId) {
   try {
     const nextPayload = await reportApi.loadReport(nextReportId);
     reportId = nextReportId;
+    selectedProjectId = nextReportId;
     payload = nextPayload;
     upsertProjectPayload(nextPayload);
     projectListStatus = 'ready';
@@ -175,6 +182,7 @@ function handleReportLoadError(error) {
     reportId = '';
   }
   workspaceView = 'project-manager';
+  ensureSelectedProjectId();
   projectListStatus = projectPayloads.length ? 'ready' : 'error';
   projectListError = error.message;
   updateUrlState({ report: reportId, view: 'projects' });
@@ -210,7 +218,9 @@ function render() {
   const page = findPage(currentNodeId, state);
 
   elements.stage.parentElement.hidden = false;
-  elements.projectManager.hidden = true;
+  elements.stage.classList.remove('stage--project-board');
+  elements.treeDrawerToggle.textContent = '叙事树';
+  elements.inspectorDrawerToggle.textContent = '状态';
   elements.modeLabel.textContent = mode === 'edit' ? '编辑模式' : '播放模式';
   elements.nodeTitle.textContent = node?.title || '未选择节点';
   elements.editButton.hidden = mode === 'edit';
@@ -263,35 +273,41 @@ function render() {
 }
 
 function renderProjectManagerView() {
-  elements.stage.parentElement.hidden = true;
-  elements.projectManager.hidden = false;
+  const model = currentProjectManagerModel();
+  elements.stage.parentElement.hidden = false;
+  elements.stage.classList.add('stage--project-board');
+  elements.treeDrawerToggle.textContent = '项目';
+  elements.inspectorDrawerToggle.textContent = '详情';
   elements.modeLabel.textContent = '项目管理';
-  elements.nodeTitle.textContent = '项目管理';
+  elements.nodeTitle.textContent = model.selectedProject?.title || '项目管理';
   elements.editButton.hidden = true;
   elements.saveButton.hidden = true;
   elements.discardButton.hidden = true;
-  elements.stage.replaceChildren();
-  elements.tree.replaceChildren();
-  elements.inspector.replaceChildren();
   editFeedback = { active: false };
   renderEditFeedback(elements.editFeedbackDock, editFeedback);
 
-  const model = createProjectManagerViewModel({
-    projects: projectPayloads,
-    activeReportId: reportId,
-    status: projectListStatus,
-    errorMessage: projectListError
-  });
-  renderProjectManager(elements.projectManager, model, {
-    onSelectProject: async (selectedReportId) => {
-      await loadReport(selectedReportId);
+  renderProjectBoard(elements.stage, model, {
+    onSelectProject(reportIdToSelect) {
+      selectProject(reportIdToSelect);
+    },
+    onEnterProject(reportIdToEnter) {
+      loadReport(reportIdToEnter);
     }
   });
 
-  renderNarrativeIslandView({
-    story_tree: { root: null, nodes: [] },
-    navigation: { linear_route: [] }
+  renderProjectList(elements.tree, model, {
+    onSelectProject(reportIdToSelect) {
+      selectProject(reportIdToSelect);
+    }
   });
+
+  renderProjectDetails(elements.inspector, model, {
+    onEnterProject(reportIdToEnter) {
+      loadReport(reportIdToEnter);
+    }
+  });
+
+  renderNarrativeIslandView();
 }
 
 function renderTree(state) {
@@ -314,6 +330,7 @@ function renderTree(state) {
 }
 
 function renderNarrativeIslandView(state) {
+  const projectModel = workspaceView === 'project-manager' ? currentProjectManagerModel() : null;
   const model = createNarrativeIslandViewModel({
     state,
     currentNodeId,
@@ -323,7 +340,10 @@ function renderNarrativeIslandView(state) {
     position: narrativeIslandPosition,
     dragging: narrativeIslandPosition.dragging,
     showProjectButton: true,
-    workspaceView
+    workspaceView,
+    selectedProjectTitle: projectModel?.selectedProject?.title || '',
+    selectedProjectId: projectModel?.selectedProject?.reportId || '',
+    canEnterSelectedProject: Boolean(projectModel?.selectedProject)
   });
 
   renderNarrativeIsland(elements.narrativeIsland, model, {
@@ -332,6 +352,9 @@ function renderNarrativeIslandView(state) {
     },
     onOpenProjectManager() {
       openProjectManager();
+    },
+    onEnterSelectedProject() {
+      enterSelectedProject();
     },
     onBeginDrag(event) {
       beginNarrativeIslandDragInteraction(event);
@@ -357,6 +380,7 @@ function renderNarrativeIslandView(state) {
 
 function openProjectManager() {
   workspaceView = 'project-manager';
+  ensureSelectedProjectId();
   mode = 'play';
   draftState = null;
   baseState = null;
@@ -368,6 +392,39 @@ function openProjectManager() {
   updateUrlState({ report: reportId, view: 'projects' });
   render();
   setStatus('项目管理已打开');
+}
+
+function selectProject(nextProjectId) {
+  selectedProjectId = nextProjectId;
+  render();
+  setStatus(`已选中 ${nextProjectId}`);
+}
+
+function enterSelectedProject() {
+  const model = currentProjectManagerModel();
+  if (!model.selectedProject) return;
+  loadReport(model.selectedProject.reportId);
+}
+
+function currentProjectManagerModel() {
+  ensureSelectedProjectId();
+  return createProjectManagerViewModel({
+    projects: projectPayloads,
+    activeReportId: reportId,
+    selectedProjectId,
+    status: projectListStatus,
+    errorMessage: projectListError
+  });
+}
+
+function ensureSelectedProjectId() {
+  const reportIds = projectPayloads.map((item) => item.reportId || item.report?.id || '').filter(Boolean);
+  if (selectedProjectId && reportIds.includes(selectedProjectId)) return;
+  if (reportId && reportIds.includes(reportId)) {
+    selectedProjectId = reportId;
+    return;
+  }
+  selectedProjectId = reportIds[0] || '';
 }
 
 function beginNarrativeIslandDragInteraction(event) {

@@ -37,3 +37,16 @@ test('app keeps a closing phase before unmounting the narrative island map', asy
   assert.match(appJs, /opening: narrativeIslandOpening/);
   assert.match(appJs, /closing: narrativeIslandClosing/);
 });
+
+test('app renders project manager inside the workbench stage and tracks selected project', async () => {
+  const appJs = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
+  const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+
+  assert.match(appJs, /let selectedProjectId =/);
+  assert.match(appJs, /renderProjectBoard\(elements\.stage/);
+  assert.match(appJs, /renderProjectList\(elements\.tree/);
+  assert.match(appJs, /renderProjectDetails\(elements\.inspector/);
+  assert.doesNotMatch(appJs, /elements\.stage\.parentElement\.hidden = true/);
+  assert.doesNotMatch(appJs, /story_tree:\s*\{\s*root:\s*null,\s*nodes:\s*\[\]\s*\}/);
+  assert.doesNotMatch(indexHtml, /id="projectManager"/);
+});
