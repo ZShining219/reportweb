@@ -37,20 +37,24 @@ test('styles define a restrained glass narrative island', async () => {
 
 test('styles define project manager and narrative island project button rules', async () => {
   const css = await readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
-  const shellHidden = cssRule(css, '.project-manager-shell[hidden]');
   const narrativeRail = cssRule(css, '.narrative-island__rail');
-  const projectCard = cssRule(css, '.project-card');
-  const projectCardTitle = cssRule(css, '.project-card__title');
+  const projectBoardStage = cssRule(css, '.stage--project-board');
+  const projectBoardCard = cssRule(css, '.project-board-card');
+  const projectDetails = cssRule(css, '.project-details');
 
-  assert.match(shellHidden, /display:\s*none/);
   assert.match(
     narrativeRail,
     /grid-template-columns:\s*minmax\(0,\s*0\.75fr\)\s+minmax\(120px,\s*1fr\)\s+minmax\(0,\s*0\.9fr\)\s+auto/,
   );
-  assert.match(projectCard, /height:\s*auto/);
-  assert.match(projectCardTitle, /overflow-wrap:\s*anywhere/);
-  assert.match(css, /\.project-manager-shell\s*{/);
+  assert.match(projectBoardStage, /overflow-y:\s*auto/);
+  assert.match(projectBoardCard, /min-height:\s*150px/);
+  assert.match(projectDetails, /display:\s*grid/);
+  assert.doesNotMatch(css, /\.project-manager-shell/);
+  assert.match(css, /\.project-board\s*{/);
+  assert.match(css, /\.project-list-panel\s*{/);
+  assert.match(css, /\.project-details\s*{/);
   assert.match(css, /\.project-manager__/);
-  assert.match(css, /\.project-card\s*{/);
   assert.match(css, /\.narrative-island__project-button/);
+  assert.match(css, /\.narrative-island--project-manager/);
+  assert.match(css, /\.narrative-island__enter-project/);
 });
